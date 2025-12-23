@@ -1,0 +1,54 @@
+/**
+ * Servidor Principal de Che Tarea
+ * Punto de entrada de la aplicación backend
+ */
+
+const express = require("express");
+const dotenv = require("dotenv");
+const cors = require("cors");
+const connectDB = require("./config/db");
+
+// Cargar variables de entorno
+dotenv.config();
+
+// Inicializar Express
+const app = express();
+
+// Conectar a MongoDB
+connectDB();
+
+// Middleware
+app.use(cors()); // Habilitar CORS para el frontend
+app.use(express.json()); // Parser de JSON
+app.use(express.urlencoded({extended: true})); // Parser de URL-encoded
+
+// Ruta de prueba
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Che Tarea API funcionando correctamente",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Manejo de rutas no encontrada
+app.use((req, res) => {
+  res.status(404).json({success: false, message: "Ruta no encontrada"});
+});
+
+// Manejo global de errores
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Error interno del servidor",
+  });
+});
+
+// Iniciar servidor
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log(`🌎 Entorno: ${process.env.NODE_ENV}`);
+});
