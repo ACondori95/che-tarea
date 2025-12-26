@@ -7,6 +7,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const connectDB = require("./config/db");
+const {startAutoDeleteScheduler} = require("./utils/autoDelete");
 
 // Cargar variables de entorno
 dotenv.config();
@@ -16,6 +17,9 @@ const app = express();
 
 // Conectar a MongoDB
 connectDB();
+
+// Iniciar auto-borrado de tareas finalizadas
+startAutoDeleteScheduler();
 
 // Middleware
 app.use(cors()); // Habilitar CORS para el frontend
