@@ -22,6 +22,18 @@ app.use(cors()); // Habilitar CORS para el frontend
 app.use(express.json()); // Parser de JSON
 app.use(express.urlencoded({extended: true})); // Parser de URL-encoded
 
+// Importar rutas
+const authRoutes = require("./routes/authRoutes");
+const taskRoutes = require("./routes/taskRoutes");
+const tagRoutes = require("./routes/tagRoutes");
+const userRoutes = require("./routes/userRoutes");
+
+// Montar rutas
+app.use("/api/auth", authRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/tags", tagRoutes);
+app.use("/api/users", userRoutes);
+
 // Ruta de prueba
 app.get("/api/health", (req, res) => {
   res.status(200).json({
@@ -31,7 +43,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Manejo de rutas no encontrada
+// Manejo de rutas no encontradas
 app.use((req, res) => {
   res.status(404).json({success: false, message: "Ruta no encontrada"});
 });
