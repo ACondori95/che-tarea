@@ -3,7 +3,7 @@
  * Endpoints para gestión del sistema Kanban
  */
 
-import axios from "axios";
+import axios from "./axios";
 
 /**
  * Obtener todas las tareas con filtros opcionales

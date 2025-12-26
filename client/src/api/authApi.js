@@ -3,7 +3,7 @@
  * Endpoints para registro, login y gestión de perfil
  */
 
-import axios from "axios";
+import axios from "./axios";
 
 /**
  * Registrar nuevo usuario
