@@ -11,7 +11,7 @@ const {
   updateTag,
   deleteTag,
 } = require("../controllers/tagController");
-const {authorize} = require("../middleware/auth");
+const {authorize, protect} = require("../middleware/auth");
 
 // Todas las rutas requieren autenticación
 router.use(protect);

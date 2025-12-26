@@ -98,12 +98,12 @@ const taskSchema = new mongoose.Schema(
 );
 
 // Índice para búsquedas eficientes
-taskSchema.index({estado: 1, prioridad: 1});
+taskSchema.index({state: 1, priority: 1});
 taskSchema.index({assignedTo: 1});
 taskSchema.index({endDate: 1});
 
 // Middleware: Actualizar fecha de finalización al cambiar a "Finalizadas"
-taskSchema.pre("save", function (next) {
+taskSchema.pre("save", function () {
   if (
     this.isModified("state") &&
     this.state === "Finalizadas" &&
@@ -111,7 +111,6 @@ taskSchema.pre("save", function (next) {
   ) {
     this.endDate = new Date();
   }
-  next();
 });
 
 module.exports = mongoose.model("Task", taskSchema);

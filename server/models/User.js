@@ -57,16 +57,15 @@ const userSchema = new mongoose.Schema(
 );
 
 // Middleware: Hashear password antes de guardar
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
   // Solo hashear si el password fue modificado
   if (!this.isModified("password")) {
-    return next();
+    return;
   }
 
   // Generar salt y hashear
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
 // Método: Comparar password ingresado con el hasheado
