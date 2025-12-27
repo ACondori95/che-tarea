@@ -1,15 +1,10 @@
-/**
- * Componente Principal de la Aplicación
- * Punto de entrada y configuración de rutas
- */
-
-import {Navigate, Route, Routes} from "react-router-dom";
+import {Route, Navigate, Routes} from "react-router-dom";
 import {useAuth} from "./hooks/useAuth";
+import ComponentTest from "./pages/ComponentTest";
 
 function App() {
   const {loading, isAuthenticated} = useAuth();
 
-  // Mostrar loading mientras se verifica la autenticación
   if (loading) {
     return (
       <div className='min-h-screen flex items-center justify-center bg-gray-50'>
@@ -24,7 +19,8 @@ function App() {
   return (
     <div className='min-h-screen bg-gray-50'>
       <Routes>
-        {/* Rutas temporales */}
+        {/* Ruta temporal de prueba de componentes */}
+        <Route path='/test' element={<ComponentTest />} />
         <Route
           path='/'
           element={
@@ -37,7 +33,11 @@ function App() {
                   El sistema está funcionando correctamente.
                 </p>
                 <p className='mt-2 text-sm text-gray-500'>
-                  En la próxima fase implementaremos el Dashboard completo.
+                  Visita
+                  <a href='/test' className='text-primary hover:underline'>
+                    /test
+                  </a>
+                  para ver los componentes UI.
                 </p>
               </div>
             ) : (
@@ -60,5 +60,4 @@ function App() {
     </div>
   );
 }
-
 export default App;
