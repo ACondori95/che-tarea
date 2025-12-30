@@ -33,26 +33,26 @@ const userSchema = new mongoose.Schema(
       required: [true, "La contraseña es obligatoria"],
       minlength: [6, "La contraseña debe tener al menos 6 caracteres"],
       select: false, // No incluir en queries por defecto
-
-      // Rol del usuario
-      rol: {
-        type: String,
-        enum: ["Usuario Estándar", "Admin"],
-        default: "Usuario Estándar",
-      },
-
-      // Avatar/foto de perfil
-      avatar: {type: String, default: null},
-
-      // Preferencias de notificaciones
-      notificaciones: {
-        email: {type: Boolean, default: true},
-        app: {type: Boolean, default: true},
-      },
-
-      // Estado de la cuenta
-      activo: {type: Boolean, default: true},
     },
+
+    // Rol del usuario
+    rol: {
+      type: String,
+      enum: ["Usuario Estándar", "Admin"],
+      default: "Usuario Estándar",
+    },
+
+    // Avatar/foto de perfil
+    avatar: {type: String, default: null},
+
+    // Preferencias de notificaciones
+    notificaciones: {
+      email: {type: Boolean, default: true},
+      app: {type: Boolean, default: true},
+    },
+
+    // Estado de la cuenta
+    activo: {type: Boolean, default: true},
   },
   {timestamps: true} // Agrega createdAt y updatedAt automáticamente
 );
