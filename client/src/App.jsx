@@ -1,35 +1,64 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+/**
+ * Componente Principal de la Aplicación
+ * Punto de entrada y configuración de rutas
+ */
+
+import {Navigate, Route, Routes} from "react-router-dom";
+import {useAuth} from "./hooks/useAuth";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const {loading, isAuthenticated} = useAuth();
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (loading) {
+    return (
+      <div className='min-h-screen flex items-center justify-center bg-gray-50'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto' />
+          <p className='mt-4 text-gray-600'>Cargando Che Tarea...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className='min-h-screen bg-gray-50'>
+      <Routes>
+        {/* Rutas temporales - las completaremos en la siguiente fase */}
+        <Route
+          path='/'
+          element={
+            isAuthenticated ? (
+              <div className='p-8'>
+                <h1 className='text-3xl font-bold text-primary'>
+                  ¡Bienvenido a Che Tarea! 🎉
+                </h1>
+                <p className='mt-4 text-gray-600'>
+                  El sistema está funcionando correctamente
+                </p>
+                <p className='mt-2 text-sm text-gray-500'>
+                  En la próxima fase implementaremos el Dashboard completo.
+                </p>
+              </div>
+            ) : (
+              <Navigate to='/login' replace />
+            )
+          }
+        />
+        <Route
+          path='/login'
+          element={
+            <div className='p-8'>
+              <h1 className='text-2xl font-bold'>Login Page</h1>
+              <p className='mt-2 text-gray-600'>
+                Se implementará en la siguiente fase
+              </p>
+            </div>
+          }
+        />
+      </Routes>
+    </div>
+  );
 }
 
-export default App
+export default App;
