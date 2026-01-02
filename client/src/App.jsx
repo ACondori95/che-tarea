@@ -1,10 +1,18 @@
 /**
  * Componente Principal de la Aplicación
- * Punto de entrada y configuración de rutas
+ * Configuración de rutas y navegación
  */
 
 import {Navigate, Route, Routes} from "react-router-dom";
 import {useAuth} from "./hooks/useAuth";
+import PrivateRoute from "./components/PrivateRoute";
+
+// Páginas públicas
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+
+// Páginas de pueba (temporales)
 import ComponentTest from "./pages/ComponentTest";
 
 function App() {
@@ -23,45 +31,64 @@ function App() {
   }
 
   return (
-    <div className='min-h-screen bg-gray-50'>
-      <Routes>
-        {/* Ruta temporal de prueba de componentes */}
-        <Route path='/test' element={<ComponentTest />} />
+    <Routes>
+      {/* Rutas Públicas */}
+      <Route
+        path='/login'
+        element={isAuthenticated ? <Navigate to='/dashboard' /> : <Login />}
+      />
+      <Route
+        path='/register'
+        element={isAuthenticated ? <Navigate to='/dashboard' /> : <Register />}
+      />
+      <Route path='/forgot-password' element={<ForgotPassword />} />
 
-        {/* Rutas temporales - las completaremos en la siguiente fase */}
-        <Route
-          path='/'
-          element={
-            isAuthenticated ? (
-              <div className='p-8'>
-                <h1 className='text-3xl font-bold text-primary'>
-                  ¡Bienvenido a Che Tarea! 🎉
-                </h1>
-                <p className='mt-4 text-gray-600'>
-                  El sistema está funcionando correctamente
-                </p>
-                <p className='mt-2 text-sm text-gray-500'>
-                  En la próxima fase implementaremos el Dashboard completo.
-                </p>
-              </div>
-            ) : (
-              <Navigate to='/login' replace />
-            )
-          }
-        />
-        <Route
-          path='/login'
-          element={
+      {/* Ruta de prueba de componentes */}
+      <Route path='/test' element={<ComponentTest />} />
+
+      {/* Rutas Protegidas */}
+      <Route
+        path='dashboard'
+        element={
+          <PrivateRoute>
             <div className='p-8'>
-              <h1 className='text-2xl font-bold'>Login Page</h1>
-              <p className='mt-2 text-gray-600'>
-                Se implementará en la siguiente fase
+              <h1 className='text-3xl font-bold text-primary'>Dashboard</h1>
+              <p className='mt-4 text-gray-600'>
+                El Dashboard Kanban se implementará en la siguiente fase
               </p>
             </div>
-          }
-        />
-      </Routes>
-    </div>
+          </PrivateRoute>
+        }
+      />
+
+      {/* Ruta raíz: redirigir según autenticación */}
+      <Route
+        path='/'
+        element={
+          isAuthenticated ? (
+            <Navigate to='/dashboard' replace />
+          ) : (
+            <Navigate to='/login' replace />
+          )
+        }
+      />
+
+      {/* Ruta 404 */}
+      <Route
+        path='*'
+        element={
+          <div className='min-h-screen flex items-center justify-center bg-gray-50'>
+            <div className='text-center'>
+              <h1 className='text-6xl font-bold text-gray-300 mb-4'>404</h1>
+              <p className='text-xl text-gray-600 mb-8'>Página no encontrada</p>
+              <a href='/' className='text-primary hover:underline font-medium'>
+                Volver al inicio
+              </a>
+            </div>
+          </div>
+        }
+      />
+    </Routes>
   );
 }
 

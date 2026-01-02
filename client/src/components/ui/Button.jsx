@@ -40,7 +40,7 @@ const Button = ({
   } ${sizes[size]} ${fullWidth ? "w-full" : ""} ${className}`;
 
   return (
-    <div
+    <button
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
@@ -57,7 +57,7 @@ const Button = ({
           {children}
         </>
       )}
-    </div>
+    </button>
   );
 };
 
