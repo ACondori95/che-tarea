@@ -3,7 +3,6 @@
  * Barra de navegación lateral
  */
 
-import {} from "react";
 import {NavLink} from "react-router-dom";
 import {
   Archive,
