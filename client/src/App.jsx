@@ -5,6 +5,7 @@
 
 import {Navigate, Route, Routes} from "react-router-dom";
 import {useAuth} from "./hooks/useAuth";
+import ComponentTest from "./pages/ComponentTest";
 
 function App() {
   const {loading, isAuthenticated} = useAuth();
@@ -24,6 +25,9 @@ function App() {
   return (
     <div className='min-h-screen bg-gray-50'>
       <Routes>
+        {/* Ruta temporal de prueba de componentes */}
+        <Route path='/test' element={<ComponentTest />} />
+
         {/* Rutas temporales - las completaremos en la siguiente fase */}
         <Route
           path='/'
