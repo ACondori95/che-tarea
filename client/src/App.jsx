@@ -12,6 +12,12 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 
+// Páginas protegidas
+import Dashboard from "./pages/Dashboard";
+import Team from "./pages/Team";
+import Archive from "./pages/Archive";
+import Profile from "./pages/Profile";
+
 // Páginas de pueba (temporales)
 import ComponentTest from "./pages/ComponentTest";
 
@@ -48,14 +54,55 @@ function App() {
 
       {/* Rutas Protegidas */}
       <Route
-        path='dashboard'
+        path='/dashboard'
         element={
           <PrivateRoute>
+            <Dashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path='/team'
+        element={
+          <PrivateRoute>
+            <Team />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path='/archive'
+        element={
+          <PrivateRoute>
+            <Archive />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path='/profile'
+        element={
+          <PrivateRoute>
+            <Profile />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path='/settings'
+        element={
+          <PrivateRoute adminOnly>
             <div className='p-8'>
-              <h1 className='text-3xl font-bold text-primary'>Dashboard</h1>
-              <p className='mt-4 text-gray-600'>
-                El Dashboard Kanban se implementará en la siguiente fase
-              </p>
+              <h1 className='text-2xl font-bold'>Configuración</h1>
+              <p className='mt-2 text-gray-600'>Se implementará próximamente</p>
+            </div>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path='/tags'
+        element={
+          <PrivateRoute adminOnly>
+            <div className='p-8'>
+              <h1 className='text-2xl font-bold'>Gestión de Etiquetas</h1>
+              <p className='mt-2 text-gray-600'>Se implementará próximamente</p>
             </div>
           </PrivateRoute>
         }
