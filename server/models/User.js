@@ -36,7 +36,4 @@ const userSchema = new mongoose.Schema(
   {timestamps: true} // Agrega createdAt y updatedAt automáticamente
 );
 
-// Índice para búsquedas rápidas por email
-userSchema.index({email: 1});
-
 module.exports = mongoose.model("User", userSchema);
