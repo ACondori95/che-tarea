@@ -19,6 +19,8 @@ app.use(express.urlencoded({extended: true}));
 // Rutas
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
+app.use("/api/tags", require("./routes/tagRoutes"));
+app.use("/api/users", require("./routes/userRoutes"));
 
 // Ruta de prueba
 app.get("/", (req, res) => {
@@ -27,7 +29,13 @@ app.get("/", (req, res) => {
     version: "1.0.0",
     status: "active",
     database: "connected",
-    endpoints: {auth: "/api/auth", tasks: "/api/tasks", health: "/health"},
+    endpoints: {
+      auth: "/api/auth",
+      tasks: "/api/tasks",
+      tags: "/api/tags",
+      users: "/api/users (admin)",
+      health: "/health",
+    },
   });
 });
 
