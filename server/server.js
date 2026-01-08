@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
+const {startTaskCleanupJob} = require("./utils/taskCleanup");
 
 // Cargar variables de entorno
 dotenv.config();
@@ -16,6 +17,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
+// Iniciar tarea de auto-borrado
+startTaskCleanupJob();
+
 // Rutas
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
@@ -29,6 +33,10 @@ app.get("/", (req, res) => {
     version: "1.0.0",
     status: "active",
     database: "connected",
+    features: {
+      autoDelete: "enabled (daily at 2:00 AM)",
+      retentionPeriod: "10 days",
+    },
     endpoints: {
       auth: "/api/auth",
       tasks: "/api/tasks",
@@ -58,7 +66,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
     success: false,
-    message: "Error interno del servidor",
+    message: err.message || "Error interno del servidor",
     error: process.env.NODE_ENV === "development" ? err.message : undefined,
   });
 });

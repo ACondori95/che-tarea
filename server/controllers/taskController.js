@@ -480,6 +480,31 @@ const restoreTask = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Ejecutar limpieza manual de tareas expiradas (testing)
+ * @route   POST /api/tasks/cleanup
+ * @access  Provate/Admin
+ */
+const manualCleanup = async (req, res) => {
+  try {
+    const {deleteExpiredTasks} = require("../utils/taskCleanup");
+    const result = await deleteExpiredTasks();
+
+    res.status(200).json({
+      success: true,
+      message: `Limpieza ejecutada: ${result.deletedCount} tarea(s) eliminada(s)`,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error en limpieza manual:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al ejecutar limpieza",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getTasks,
   getTaskById,
@@ -491,4 +516,5 @@ module.exports = {
   deleteSubtask,
   addComment,
   restoreTask,
+  manualCleanup,
 };
