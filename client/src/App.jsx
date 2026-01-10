@@ -2,6 +2,7 @@ import {Navigate, Route, Routes} from "react-router-dom";
 import {ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import {AuthProvider} from "./context/AuthContext";
+import {TaskProvider} from "./context/TaskContext";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import MainLayout from "./components/layout/MainLayout";
 
@@ -25,7 +26,9 @@ function App() {
           path='/'
           element={
             <ProtectedRoute>
-              <MainLayout />
+              <TaskProvider>
+                <MainLayout />
+              </TaskProvider>
             </ProtectedRoute>
           }>
           <Route index element={<Navigate to='/dashboard' replace />} />
@@ -53,10 +56,12 @@ function App() {
           <Route
             path='team'
             element={
-              <div className='bg-white rounded-lg shadow p-8 text-center'>
-                <h1 className='text-2xl font-bold mb-4'>Gestión de Equipo</h1>
-                <p className='bg-gray-600'>Panel de administración</p>
-              </div>
+              <ProtectedRoute adminOnly>
+                <div className='bg-white rounded-lg shadow p-8 text-center'>
+                  <h1 className='text-2xl font-bold mb-4'>Gestión de Equipo</h1>
+                  <p className='bg-gray-600'>Panel de administración</p>
+                </div>
+              </ProtectedRoute>
             }
           />
         </Route>
