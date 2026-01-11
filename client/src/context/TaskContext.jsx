@@ -97,7 +97,7 @@ export const TaskProvider = ({children}) => {
         prev.map((task) => (task._id === taskId ? data.data : task))
       );
       toast.success("Subtarea agregada");
-      return {success: true};
+      return {success: true, data: data.data};
     } catch (error) {
       toast.error("Error al agregar subtarea");
       return {success: false};
@@ -114,7 +114,7 @@ export const TaskProvider = ({children}) => {
       setTasks((prev) =>
         prev.map((task) => (task._id === taskId ? data.data : task))
       );
-      return {success: true};
+      return {success: true, data: data.data};
     } catch (error) {
       toast.error("Error al actualizar subtarea");
       return {success: false};
@@ -129,7 +129,7 @@ export const TaskProvider = ({children}) => {
         prev.map((task) => (task._id === taskId ? data.data : task))
       );
       toast.success("Comentario agregado");
-      return {success: true};
+      return {success: true, data: data.data};
     } catch (error) {
       toast.error("Error al agregar comentario");
       return {success: false};

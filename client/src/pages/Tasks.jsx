@@ -1,8 +1,8 @@
 import {useState} from "react";
 import {
-  closestCorners,
   DndContext,
   DragOverlay,
+  closestCorners,
   PointerSensor,
   useSensor,
   useSensors,
@@ -12,14 +12,21 @@ import {useTask} from "../context/TaskContext";
 import Column from "../components/kanban/Column";
 import TaskCard from "../components/kanban/TaskCard";
 import QuickAddModal from "../components/kanban/QuickAddModal";
+import TaskDetailModal from "../components/kanban/TaskDetailModal";
 
 const Tasks = () => {
   const {tasks, loading, updateTask} = useTask();
   const [activeTask, setActiveTask] = useState(null);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState(null); // Guardar solo el ID
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {activationConstraint: {distance: 8}})
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
   );
 
   const columns = [
@@ -29,9 +36,14 @@ const Tasks = () => {
     {id: "finalizada", title: "Finalizadas"},
   ];
 
-  const getTaskByStatus = (status) => {
+  const getTasksByStatus = (status) => {
     return tasks.filter((task) => task.status === status);
   };
+
+  // Obtener la tarea seleccionada del array actualizado
+  const selectedTask = selectedTaskId
+    ? tasks.find((t) => t._id === selectedTaskId)
+    : null;
 
   const handleDragStart = (event) => {
     const {active} = event;
@@ -63,14 +75,19 @@ const Tasks = () => {
   };
 
   const handleTaskClick = (task) => {
-    // TODO: Abrir modal de detalle de tarea
-    console.log("Abrir detalle de tarea:", task);
+    setSelectedTaskId(task._id); // Guardar solo el ID
+    setIsDetailModalOpen(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedTaskId(null); // Limpiar el ID
   };
 
   if (loading) {
     return (
       <div className='flex items-center justify-center h-full'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary' />
+        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary'></div>
       </div>
     );
   }
@@ -103,7 +120,7 @@ const Tasks = () => {
               key={column.id}
               id={column.id}
               title={column.title}
-              tasks={getTaskByStatus(column.id)}
+              tasks={getTasksByStatus(column.id)}
               onTaskClick={handleTaskClick}
               isFinalized={column.id === "finalizada"}
             />
@@ -122,6 +139,15 @@ const Tasks = () => {
         isOpen={isQuickAddOpen}
         onClose={() => setIsQuickAddOpen(false)}
       />
+
+      {/* Task Detail Modal */}
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          isOpen={isDetailModalOpen}
+          onClose={handleCloseDetailModal}
+        />
+      )}
     </div>
   );
 };

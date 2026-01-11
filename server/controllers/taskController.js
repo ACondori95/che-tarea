@@ -295,6 +295,10 @@ const addSubtask = async (req, res) => {
     task.subtasks.push({title, completed: false});
     await task.save();
 
+    await task.populate("createdBy", "name email avatar");
+    await task.populate("assignedTo", "name email avatar");
+    await task.populate("history.user", "name avatar");
+
     res.status(200).json({
       success: true,
       message: "Subtarea agregada exitosamente",
@@ -343,8 +347,12 @@ const updateSubtask = async (req, res) => {
 
     await task.save();
 
+    await task.populate("createdBy", "name email avatar");
+    await task.populate("assignedTo", "name email avatar");
+    await task.populate("history.user", "name avatar");
+
     res.status(200).json({
-      success: false,
+      success: true,
       message: "Subtarea actualizada exitosamente",
       data: task,
     });
