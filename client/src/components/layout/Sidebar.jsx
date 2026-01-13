@@ -20,7 +20,7 @@ const Sidebar = () => {
     },
     {
       name: "Configuración",
-      path: "/settings",
+      path: "/profile",
       icon: Settings,
       roles: ["user", "admin"],
     },

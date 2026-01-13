@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Profile from "./pages/Profile";
 import AdminPanel from "./pages/AdminPanel";
+import Archive from "./pages/Archive";
 
 function App() {
   return (
@@ -36,24 +37,7 @@ function App() {
           <Route path='dashboard' element={<Dashboard />} />
           <Route path='tasks' element={<Tasks />} />
           <Route path='profile' element={<Profile />} />
-          <Route
-            path='archive'
-            element={
-              <div className='bg-white rounded-lg shadow p-8 text-center'>
-                <h1 className='text-2xl font-bold mb-4'>Archivo</h1>
-                <p className='bg-gray-600'>Tareas archivadas</p>
-              </div>
-            }
-          />
-          <Route
-            path='settings'
-            element={
-              <div className='bg-white rounded-lg shadow p-8 text-center'>
-                <h1 className='text-2xl font-bold mb-4'>Configuración</h1>
-                <p className='bg-gray-600'>Ajustes del sistema</p>
-              </div>
-            }
-          />
+          <Route path='archive' element={<Archive />} />
           <Route
             path='team'
             element={
