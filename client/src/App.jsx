@@ -12,6 +12,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Profile from "./pages/Profile";
+import AdminPanel from "./pages/AdminPanel";
 
 function App() {
   return (
@@ -57,10 +58,7 @@ function App() {
             path='team'
             element={
               <ProtectedRoute adminOnly>
-                <div className='bg-white rounded-lg shadow p-8 text-center'>
-                  <h1 className='text-2xl font-bold mb-4'>Gestión de Equipo</h1>
-                  <p className='bg-gray-600'>Panel de administración</p>
-                </div>
+                <AdminPanel />
               </ProtectedRoute>
             }
           />
