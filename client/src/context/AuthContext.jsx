@@ -11,6 +11,8 @@ import {toast} from "react-toastify";
 
 const AuthContext = createContext();
 
+const STORAGE_KEYS = {TOKEN: "token", USER: "user"};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -24,50 +26,50 @@ export const AuthProvider = ({children}) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Logout
   const logout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem(STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER);
     setUser(null);
     toast.info("Sesión cerrada");
     navigate("/login");
   }, [navigate]);
 
-  // Cargar usuario del localStorage al iniciar
   useEffect(() => {
     const loadUser = async () => {
-      const token = localStorage.getItem("token");
-      const savedUser = localStorage.getItem("user");
+      const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+      const savedUser = localStorage.getItem(STORAGE_KEYS.USER);
 
       if (token && savedUser) {
         try {
-          setUser(JSON.parse(savedUser));
-          // Verificar que el token siga siendo válido
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
+
           const {data} = await axios.get("/auth/me");
           setUser(data.data);
-          localStorage.setItem("user", JSON.stringify(data.data));
+          localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.data));
         } catch (error) {
           console.error("Error al cargar usuario:", error);
-          logout();
+          localStorage.removeItem(STORAGE_KEYS.TOKEN);
+          localStorage.removeItem(STORAGE_KEYS.USER);
+          setUser(null);
         }
       }
       setLoading(false);
     };
 
     loadUser();
-  }, [logout]);
+  }, []);
 
-  // Registro
   const register = async (userData) => {
     try {
       const {data} = await axios.post("/auth/register", userData);
 
-      localStorage.setItem("token", data.data.token);
-      localStorage.setItem("user", JSON.stringify(data.data));
+      localStorage.setItem(STORAGE_KEYS.TOKEN, data.data.token);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.data));
       setUser(data.data);
 
       toast.success("¡Cuenta creada exitosamente!");
-      navigate("/dashboard");
+      setTimeout(() => navigate("/dashboard"), 0);
 
       return {success: true};
     } catch (error) {
@@ -78,17 +80,16 @@ export const AuthProvider = ({children}) => {
     }
   };
 
-  // Login
   const login = async (credentials) => {
     try {
       const {data} = await axios.post("/auth/login", credentials);
 
-      localStorage.setItem("token", data.data.token);
-      localStorage.setItem("user", JSON.stringify(data.data));
+      localStorage.setItem(STORAGE_KEYS.TOKEN, data.data.token);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.data));
       setUser(data.data);
 
       toast.success(`¡Bienvenido, ${data.data.name}!`);
-      navigate("/dashboard");
+      setTimeout(() => navigate("/dashboard"), 0);
 
       return {success: true};
     } catch (error) {
@@ -99,13 +100,12 @@ export const AuthProvider = ({children}) => {
     }
   };
 
-  // Actualizar perfil
   const updateProfile = async (profileData) => {
     try {
       const {data} = await axios.put("/auth/profile", profileData);
 
       setUser(data.data);
-      localStorage.setItem("user", JSON.stringify(data.data));
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.data));
 
       toast.success("Perfil actualizado exitosamente");
       return {success: true};

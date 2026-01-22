@@ -1,38 +1,48 @@
+import {useMemo} from "react";
 import {useSortable} from "@dnd-kit/sortable";
 import {CSS} from "@dnd-kit/utilities";
 import {Calendar, CheckCircle2, Circle, MessageSquare} from "lucide-react";
+
+const PRIORITY_COLORS = {
+  alta: "bg-urgent text-white",
+  media: "bg-medium text-white",
+  baja: "bg-low text-white",
+};
+
+const PRIORITY_LABELS = {alta: "Alta", media: "Media", baja: "Baja"};
 
 const TaskCard = ({task, onClick}) => {
   const {attributes, listeners, setNodeRef, transform, transition, isDragging} =
     useSortable({id: task._id});
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+  const style = useMemo(
+    () => ({
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    }),
+    [transform, transition, isDragging],
+  );
 
-  // Calcular progreso de subtareas
-  const getSubtaskProgress = () => {
+  const subtaskProgress = useMemo(() => {
     if (!task.subtasks || task.subtasks.length === 0) return null;
     const completed = task.subtasks.filter((st) => st.completed).length;
     const total = task.subtasks.length;
     return {completed, total};
-  };
+  }, [task.subtasks]);
 
-  const subtaskProgress = getSubtaskProgress();
+  const formattedDate = useMemo(() => {
+    if (!task.dueDate) return null;
+    return new Date(task.dueDate).toLocaleDateString("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+    });
+  }, [task.dueDate]);
 
-  // Mapeo de prioridaes a colores
-  const priorityColors = {
-    alta: "bg-urgent text-white",
-    media: "bg-medium text-white",
-    baja: "bg-low text-white",
-  };
-
-  const priorityLabels = {
-    alta: "Alta",
-    media: "Media",
-    baja: "Baja",
+  const handleClick = () => {
+    if (!isDragging) {
+      onClick();
+    }
   };
 
   return (
@@ -41,7 +51,7 @@ const TaskCard = ({task, onClick}) => {
       style={style}
       {...attributes}
       {...listeners}
-      onClick={onClick}
+      onClick={handleClick}
       className={`bg-white rounded-lg border border-gray-200 p-4 cursor-pointer hover:shadow-md transition-shadow ${
         task.status === "finalizada" ? "opacity-60" : ""
       }`}>
@@ -49,19 +59,14 @@ const TaskCard = ({task, onClick}) => {
       <div className='flex items-start justify-between mb-3'>
         <span
           className={`px-2 py-1 rounded text-xs font-medium ${
-            priorityColors[task.priority]
+            PRIORITY_COLORS[task.priority]
           }`}>
-          {priorityLabels[task.priority]}
+          {PRIORITY_LABELS[task.priority]}
         </span>
-        {task.dueDate && (
+        {formattedDate && (
           <div className='flex items-center gap-1 text-xs text-gray-500'>
             <Calendar size={12} />
-            <span>
-              {new Date(task.dueDate).toLocaleDateString("es-AR", {
-                day: "2-digit",
-                month: "2-digit",
-              })}
-            </span>
+            <span>{formattedDate}</span>
           </div>
         )}
 
@@ -106,7 +111,6 @@ const TaskCard = ({task, onClick}) => {
               </div>
             )}
 
-            {/* Comentarios */}
             {task.comments && task.comments.length > 0 && (
               <div className='flex items-center gap-1'>
                 <MessageSquare size={16} />
@@ -115,7 +119,6 @@ const TaskCard = ({task, onClick}) => {
             )}
           </div>
 
-          {/* Avatar del asignado */}
           {task.assignedTo && (
             <div className='w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold'>
               {task.assignedTo.name?.charAt(0).toUpperCase()}

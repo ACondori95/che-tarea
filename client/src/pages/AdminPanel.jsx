@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {
   Plus,
   Search,
@@ -12,6 +12,23 @@ import {useTask} from "../context/TaskContext";
 import axios from "../api/axios";
 import {toast} from "react-toastify";
 
+const PREDEFINED_COLORS = [
+  "#2563eb",
+  "#dc2626",
+  "#16a34a",
+  "#ea580c",
+  "#9333ea",
+  "#0891b2",
+  "#65a30d",
+  "#ca8a04",
+  "#e11d48",
+  "#7c3aed",
+];
+
+const INITIAL_INVITE_DATA = {name: "", email: "", password: "", role: "user"};
+
+const INITIAL_TAG_DATA = {name: "", color: "#2563eb"};
+
 const AdminPanel = () => {
   const {tags, fetchTags} = useTask();
   const [users, setUsers] = useState([]);
@@ -19,20 +36,36 @@ const AdminPanel = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
 
-  const [inviteData, setInviteData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "user",
-  });
-
-  const [newTag, setNewTag] = useState({name: "", color: "#2563eb"});
+  const [inviteData, setInviteData] = useState(INITIAL_INVITE_DATA);
+  const [newTag, setNewTag] = useState(INITIAL_TAG_DATA);
 
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // Bloquear scroll cuando modales estén abiertos
+  useEffect(() => {
+    if (isInviteModalOpen || isTagModalOpen) {
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "unset";
+      };
+    }
+  }, [isInviteModalOpen, isTagModalOpen]);
+
+  // Cerrar modales con Escape
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        if (isInviteModalOpen) handleCloseInviteModal();
+        if (isTagModalOpen) handleCloseTagModal();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isInviteModalOpen, isTagModalOpen]);
 
   const fetchUsers = async () => {
     try {
@@ -46,14 +79,23 @@ const AdminPanel = () => {
     }
   };
 
+  const handleCloseInviteModal = () => {
+    setInviteData(INITIAL_INVITE_DATA);
+    setIsInviteModalOpen(false);
+  };
+
+  const handleCloseTagModal = () => {
+    setNewTag(INITIAL_TAG_DATA);
+    setIsTagModalOpen(false);
+  };
+
   const handleInviteUser = async (e) => {
     e.preventDefault();
 
     try {
       await axios.post("/users", inviteData);
       toast.success("Usuario invitado exitosamente");
-      setInviteData({name: "", email: "", password: "", role: "user"});
-      setIsInviteModalOpen(false);
+      handleCloseInviteModal();
       fetchUsers();
     } catch (error) {
       const message =
@@ -92,8 +134,7 @@ const AdminPanel = () => {
     try {
       await axios.post("/tags", newTag);
       toast.success("Etiqueta creada exitosamente");
-      setNewTag({name: "", color: "#2563eb"});
-      setIsTagModalOpen(false);
+      handleCloseTagModal();
       fetchTags();
     } catch (error) {
       const message =
@@ -114,28 +155,19 @@ const AdminPanel = () => {
     }
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = useMemo(
+    () =>
+      users.filter(
+        (user) =>
+          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchTerm.toLowerCase()),
+      ),
+    [users, searchTerm],
   );
 
-  const predefinedColors = [
-    "#2563eb",
-    "#dc2626",
-    "#16a34a",
-    "#ea580c",
-    "#9333ea",
-    "#0891b2",
-    "#65a30d",
-    "#ca8a04",
-    "#e11d48",
-    "#7c3aed",
-  ];
-
   return (
-    <div className=''>
-      {/* Header */}
+    <div className='space-y-6'>
+      {/* header */}
       <div>
         <h1 className='text-2xl font-bold text-gray-900'>
           Configuración del Equipo
@@ -236,18 +268,15 @@ const AdminPanel = () => {
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap'>
                       <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.isActive
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}>
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
                         {user.isActive ? "Activo" : "Inactivo"}
                       </span>
                     </td>
                     <td className='px-6 py-4 whitespace-nowrap text-right text-sm font-medium'>
                       <button
                         onClick={() => handleDeactivateUser(user._id)}
-                        className='text-red-600 hover:text-red-900 ml-4'>
+                        className='text-red-600 hover:text-red-900'
+                        aria-label='Desactivar usuario'>
                         <Trash2 size={18} />
                       </button>
                     </td>
@@ -262,6 +291,9 @@ const AdminPanel = () => {
       {/* Gestión de Etiquetas */}
       <div className='bg-white rounded-lg shadow'>
         <div className='px-6 py-4 border-b border-gray-200 flex items-center justify-between'>
+          <h2 className='text-lg font-semibold text-gray-900'>
+            Gestión de Etiquetas
+          </h2>
           <button
             onClick={() => setIsTagModalOpen(true)}
             className='flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition'>
@@ -285,7 +317,8 @@ const AdminPanel = () => {
                 </div>
                 <button
                   onClick={() => handleDeleteTag(tag._id)}
-                  className='text-red-600 hover:text-red-900'>
+                  className='text-red-600 hover:text-red-900'
+                  aria-label={`Eliminar etiqueta ${tag.name}`}>
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -302,15 +335,28 @@ const AdminPanel = () => {
 
       {/* Modal: Invitar Usuario */}
       {isInviteModalOpen && (
-        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
-          <div className='bg-white rounded-lg shadow-xl max-w-md w-full'>
+        <div
+          className='fixed top-0 left-0 w-screen h-screen bg-black/50 flex items-center justify-center z-50 p-4'
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            marginTop: 0,
+          }}
+          onClick={handleCloseInviteModal}>
+          <div
+            className='bg-white rounded-lg shadow-xl max-w-md w-full relative'
+            onClick={(e) => e.stopPropagation()}>
             <div className='flex items-center justify-between p-6 border-b border-gray-200'>
               <h3 className='text-xl font-semibold text-gray-900'>
                 Invitar Nuevo Miembro
               </h3>
               <button
-                onClick={() => setIsInviteModalOpen(false)}
-                className='text-gray-400 hover:text-gray-600'>
+                onClick={handleCloseInviteModal}
+                className='text-gray-400 hover:text-gray-600'
+                aria-label='Cerrar modal'>
                 <X size={24} />
               </button>
             </div>
@@ -370,11 +416,7 @@ const AdminPanel = () => {
                   <button
                     type='button'
                     onClick={() => setInviteData({...inviteData, role: "user"})}
-                    className={`flex flex-col items-center p-4 border-2 rounded-lg transition ${
-                      inviteData.role === "user"
-                        ? "border-primary bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}>
+                    className={`flex flex-col items-center p-4 border-2 rounded-lg transition ${inviteData.role === "user" ? "border-primary bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}>
                     <UserIcon
                       size={24}
                       className={
@@ -391,11 +433,7 @@ const AdminPanel = () => {
                     onClick={() =>
                       setInviteData({...inviteData, role: "admin"})
                     }
-                    className={`flex flex-col items-center p-4 border-2 rounded-lg transition ${
-                      inviteData.role === "admin"
-                        ? "border-primary bg-blue-50"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}>
+                    className={`flex flex-col items-center p-4 border-2 rounded-lg transition ${inviteData.role === "admin" ? "border-primary bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}>
                     <Shield
                       size={24}
                       className={
@@ -412,7 +450,7 @@ const AdminPanel = () => {
               <div className='flex gap-3 pt-4'>
                 <button
                   type='button'
-                  onClick={() => setIsInviteModalOpen(false)}
+                  onClick={handleCloseInviteModal}
                   className='flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition'>
                   Cancelar
                 </button>
@@ -429,15 +467,28 @@ const AdminPanel = () => {
 
       {/* Modal: Crear Etiqueta */}
       {isTagModalOpen && (
-        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
-          <div className='bg-white rounded-lg shadow-xl max-w-md w-full'>
+        <div
+          className='fixed top-0 left-0 w-screen h-screen bg-black/50 flex items-center justify-center z-50 p-4'
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            marginTop: 0,
+          }}
+          onClick={handleCloseTagModal}>
+          <div
+            className='bg-white rounded-lg shadow-xl max-w-md w-full'
+            onClick={(e) => e.stopPropagation()}>
             <div className='flex items-center justify-between p-6 border-b border-gray-200'>
               <h3 className='text-xl font-semibold text-gray-900'>
                 Crear Nueva Etiqueta
               </h3>
               <button
-                onClick={() => setIsTagModalOpen(false)}
-                className='text-gray-400 hover:text-gray-600'>
+                onClick={handleCloseTagModal}
+                className='text-gray-400 hover:text-gray-600'
+                aria-label='Cerrar modal'>
                 <X size={24} />
               </button>
             </div>
@@ -462,17 +513,14 @@ const AdminPanel = () => {
                   Color
                 </label>
                 <div className='grid grid-cols-5 gap-2 mb-3'>
-                  {predefinedColors.map((color) => (
+                  {PREDEFINED_COLORS.map((color) => (
                     <button
                       key={color}
                       type='button'
                       onClick={() => setNewTag({...newTag, color})}
-                      className={`w-full h-10 rounded-lg transition ${
-                        newTag.color === color
-                          ? "ring-2 ring-offset-2 ring-primary"
-                          : ""
-                      }`}
+                      className={`w-full h-10 rounded-lg transition ${newTag.color === color ? "ring-2 ring-offset-2 ring-primary" : ""}`}
                       style={{backgroundColor: color}}
+                      aria-label={`Seleccionar color ${color}`}
                     />
                   ))}
                 </div>
@@ -489,7 +537,7 @@ const AdminPanel = () => {
               <div className='flex gap-3 pt-4'>
                 <button
                   type='button'
-                  onClick={() => setIsTagModalOpen(false)}
+                  onClick={handleCloseTagModal}
                   className='flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition'>
                   Cancelar
                 </button>

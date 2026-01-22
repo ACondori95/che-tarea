@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useMemo, useState} from "react";
 import {
   DndContext,
   DragOverlay,
@@ -14,6 +14,13 @@ import TaskCard from "../components/kanban/TaskCard";
 import QuickAddModal from "../components/kanban/QuickAddModal";
 import TaskDetailModal from "../components/kanban/TaskDetailModal";
 
+const COLUMNS = [
+  {id: "por_hacer", title: "Por Hacer"},
+  {id: "en_progreso", title: "En Progreso"},
+  {id: "pendiente_revision", title: "Pendiente de Revisión"},
+  {id: "finalizada", title: "Finalizadas"},
+];
+
 const Tasks = () => {
   const {tasks, loading, updateTask} = useTask();
   const [activeTask, setActiveTask] = useState(null);
@@ -26,24 +33,18 @@ const Tasks = () => {
       activationConstraint: {
         distance: 8,
       },
-    })
+    }),
   );
-
-  const columns = [
-    {id: "por_hacer", title: "Por Hacer"},
-    {id: "en_progreso", title: "En Progreso"},
-    {id: "pendiente_revision", title: "Pendiente de Revisión"},
-    {id: "finalizada", title: "Finalizadas"},
-  ];
 
   const getTasksByStatus = (status) => {
     return tasks.filter((task) => task.status === status);
   };
 
   // Obtener la tarea seleccionada del array actualizado
-  const selectedTask = selectedTaskId
-    ? tasks.find((t) => t._id === selectedTaskId)
-    : null;
+  const selectedTask = useMemo(
+    () => (selectedTaskId ? tasks.find((t) => t._id === selectedTaskId) : null),
+    [selectedTaskId, tasks],
+  );
 
   const handleDragStart = (event) => {
     const {active} = event;
@@ -75,13 +76,13 @@ const Tasks = () => {
   };
 
   const handleTaskClick = (task) => {
-    setSelectedTaskId(task._id); // Guardar solo el ID
+    setSelectedTaskId(task._id);
     setIsDetailModalOpen(true);
   };
 
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false);
-    setSelectedTaskId(null); // Limpiar el ID
+    setSelectedTaskId(null);
   };
 
   if (loading) {
@@ -115,7 +116,7 @@ const Tasks = () => {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}>
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 flex-1 overflow-auto pb-6'>
-          {columns.map((column) => (
+          {COLUMNS.map((column) => (
             <Column
               key={column.id}
               id={column.id}

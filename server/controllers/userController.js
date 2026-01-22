@@ -84,6 +84,14 @@ const createUser = async (req, res) => {
       });
     }
 
+    // Validar longitud de contraseña
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "La contraseña sebe tener al menos 6 caracteres",
+      });
+    }
+
     // Verificar si el usuario ya existe
     const userExists = await User.findOne({email: email.toLowerCase()});
     if (userExists) {
@@ -117,6 +125,14 @@ const createUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al crear usuario:", error);
+
+    // Manejar error de email duplicado
+    if (error.code === 11000) {
+      return res
+        .status(400)
+        .json({success: false, message: "El email ya está registrado"});
+    }
+
     res.status(500).json({
       success: false,
       message: "Error al crear usuario",
@@ -144,6 +160,7 @@ const updateUser = async (req, res) => {
 
     // Actualizar campos
     if (name) user.name = name;
+
     if (email) {
       // Verificar si el nuevo email ya existe
       const emailExists = await User.findOne({
@@ -159,6 +176,7 @@ const updateUser = async (req, res) => {
 
       user.email = email.toLowerCase();
     }
+
     if (role) user.role = role;
     if (isActive !== undefined) user.isActive = isActive;
     if (avatar !== undefined) user.avatar = avatar;
@@ -181,6 +199,14 @@ const updateUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al actualizar usuario:", error);
+
+    // Manejar error de email duplicado
+    if (error.code === 11000) {
+      return res
+        .status(400)
+        .json({success: false, message: "El email ya está registrado"});
+    }
+
     res.status(500).json({
       success: false,
       message: "Error al actualizar usuario",

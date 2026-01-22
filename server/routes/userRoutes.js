@@ -15,10 +15,13 @@ const {isAdmin} = require("../middleware/roleMiddleware");
 router.use(protect);
 router.use(isAdmin);
 
+// Rutas de colección
 router.route("/").get(getUsers).post(createUser);
 
+// Rutas de recurso individual
 router.route("/:id").get(getUserById).put(updateUser).delete(deleteUser);
 
+// Acciones especiales sobre un usuario
 router.put("/:id/reset-password", resetUserPassword);
 
 module.exports = router;

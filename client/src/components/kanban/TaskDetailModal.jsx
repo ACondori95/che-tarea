@@ -1,19 +1,97 @@
-import {useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {
-  X,
   Calendar,
-  Tag,
-  User,
   CheckCircle2,
   Circle,
-  Plus,
-  Trash2,
-  MessageSquare,
   Clock,
+  MessageSquare,
+  Plus,
   Send,
+  Tag,
+  Trash2,
+  User,
+  X,
 } from "lucide-react";
 import {useTask} from "../../context/TaskContext";
 import {useAuth} from "../../context/AuthContext";
+
+const PRIORITY_COLORS = {alta: "bg-urgent", media: "bg-medium", baja: "bg-low"};
+
+const STATUS_LABELS = {
+  por_hacer: "Por Hacer",
+  en_progreso: "En Progreso",
+  pendiente_revision: "Pendiente de Revisión",
+  finalizada: "Finalizada",
+};
+
+const ACTION_LABELS = {
+  created: "creó la tarea",
+  status_changed: "cambió el estado",
+  priority_changed: "cambió la prioridad",
+  assigned: "asignó la tarea",
+  commented: "comentó",
+  completed: "completó la tarea",
+};
+
+const SubtaskItem = ({subtask, onToggle}) => (
+  <div className='flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition'>
+    <button
+      onClick={() => onToggle(subtask._id, subtask.completed)}
+      className=''>
+      {subtask.completed ? (
+        <CheckCircle2 size={20} className='text-green-500' />
+      ) : (
+        <Circle size={20} className='text-gray-400' />
+      )}
+    </button>
+    <span
+      className={`flex-1 ${subtask.completed ? "line-through text-gray-400" : "text-gray-700"}`}>
+      {subtask.title}
+    </span>
+  </div>
+);
+
+const CommentItem = ({comment, formatDate}) => (
+  <div className='flex gap-3 p-3 bg-amber-50 rounded-lg'>
+    <div className='w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-semibold flex-shrink-0'>
+      {comment.user?.name?.charAt(0).toUpperCase()}
+    </div>
+    <div className='flex-1'>
+      <div className='flex items-baseline gap-2 mb-1'>
+        <span className='font-medium text-gray-900 text-sm'>
+          {comment.user?.name}
+        </span>
+        <span className='text-xs text-gray-500'>
+          {formatDate(comment.createdAt)}
+        </span>
+      </div>
+      <p className='text-gray-700 text-sm'>{comment.text}</p>
+    </div>
+  </div>
+);
+
+const HistoryItem = ({entry, getActionLabel, formatDate}) => (
+  <div className='flex gap-3 text-sm'>
+    <div className='w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-semibold flex-shrink-0'>
+      {entry.user?.name?.charAt(0).toUpperCase() || "?"}
+    </div>
+    <div className='flex-1'>
+      <p className='text-gray-700'>
+        <span className='font-medium'>{entry.user?.name}</span>{" "}
+        {getActionLabel(entry.action)}{" "}
+        {entry.previousValue && entry.newValue && (
+          <span>
+            de <span className='font-medium'>{entry.previousValue}</span> a{" "}
+            <span className='font-medium'>{entry.newValue}</span>
+          </span>
+        )}
+      </p>
+      <p className='text-xs text-gray-500 mt-0.5'>
+        {formatDate(entry.timestamp)}
+      </p>
+    </div>
+  </div>
+);
 
 const TaskDetailModal = ({task, isOpen, onClose}) => {
   const {updateTask, deleteTask, addSubtask, updateSubtask, addComment} =
@@ -25,6 +103,43 @@ const TaskDetailModal = ({task, isOpen, onClose}) => {
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editingTitle, setEditingTitle] = useState("");
   const [editingDescription, setEditingDescription] = useState("");
+
+  const canApprove = useMemo(
+    () => user?.role === "admin" && task?.status === "pendiente_revision",
+    [user?.role, task?.status],
+  );
+
+  const formatDate = useCallback((date) => {
+    return new Date(date).toLocaleDateString("es-AR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }, []);
+
+  const getActionLabel = useCallback((action) => {
+    return ACTION_LABELS[action] || action;
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = "unset";
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen || !task) return null;
 
@@ -83,44 +198,13 @@ const TaskDetailModal = ({task, isOpen, onClose}) => {
     }
   };
 
-  const priorityColors = {
-    alta: "bg-urgent",
-    media: "bg-medium",
-    baja: "bg-low",
-  };
-
-  const statusLabels = {
-    por_hacer: "Por Hacer",
-    en_progreso: "En Progreso",
-    pendiente_revision: "Pendiente de Revisión",
-    finalizada: "Finalizada",
-  };
-
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("es-AR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const getActionLabel = (action) => {
-    const labels = {
-      created: "creó la tarea",
-      status_changed: "cambió el estado",
-      priority_changed: "cambió la prioridad",
-      assigned: "asignó la tarea",
-      commented: "comentó",
-      completed: "completó la tarea",
-    };
-    return labels[action] || action;
-  };
-
   return (
-    <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto'>
-      <div className='bg-white rounded-lg shadow-xl max-w-4xl w-full my-8'>
+    <div
+      className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'
+      onClick={onClose}>
+      <div
+        className='bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col'
+        onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className='flex items-start justify-between p-6 border-b border-gray-200'>
           <div className='flex-1 mr-4'>
@@ -151,17 +235,15 @@ const TaskDetailModal = ({task, isOpen, onClose}) => {
             {/* Badges */}
             <div className='flex items-center gap-2 mt-3'>
               <span
-                className={`px-3 py-1 rounded-full text-white text-sm font-medium ${
-                  priorityColors[task.priority]
-                }`}>
+                className={`px-3 py-1 rounded-full text-white text-sm font-medium ${PRIORITY_COLORS[task.priority]}`}>
                 {task.priority === "alta"
                   ? "Alta"
                   : task.priority === "media"
-                  ? "Media"
-                  : "Baja"}
+                    ? "Media"
+                    : "Baja"}
               </span>
               <span className='px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-medium'>
-                {statusLabels[task.status]}
+                {STATUS_LABELS[task.status]}
               </span>
             </div>
           </div>
@@ -174,7 +256,7 @@ const TaskDetailModal = ({task, isOpen, onClose}) => {
         </div>
 
         {/* Content */}
-        <div className='p-6 grid grid-cols-1 lg:grid-cols-3 gap-6'>
+        <div className='p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-y-auto flex-1'>
           {/* Columna principal */}
           <div className='lg:col-span-2 space-y-6'>
             {/* Descripción */}
@@ -191,6 +273,10 @@ const TaskDetailModal = ({task, isOpen, onClose}) => {
                     if (e.key === "Escape") {
                       setIsEditingDescription(false);
                     }
+                    // Ctrl/Cmd + Enter para guardar
+                    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                      handleSaveDescription();
+                    }
                   }}
                   rows={4}
                   autoFocus
@@ -201,7 +287,7 @@ const TaskDetailModal = ({task, isOpen, onClose}) => {
                   onClick={handleStartEditingDescription}
                   className='text-gray-600 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition min-h-[100px]'>
                   {task.description ||
-                    "Haz clic para agregar una descripción..."}
+                    "Haz click para agregar una descripción..."}
                 </div>
               )}
             </div>
@@ -216,29 +302,11 @@ const TaskDetailModal = ({task, isOpen, onClose}) => {
 
               <div className='space-y-2 mb-3'>
                 {task.subtasks?.map((subtask) => (
-                  <div
+                  <SubtaskItem
                     key={subtask._id}
-                    className='flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition'>
-                    <button
-                      onClick={() =>
-                        handleToggleSubtask(subtask._id, subtask.completed)
-                      }
-                      className='flex-shrink-0'>
-                      {subtask.completed ? (
-                        <CheckCircle2 size={20} className='text-green-500' />
-                      ) : (
-                        <Circle size={20} className='text-gray-400' />
-                      )}
-                    </button>
-                    <span
-                      className={`flex-1 ${
-                        subtask.completed
-                          ? "line-through text-gray-400"
-                          : "text-gray-700"
-                      }`}>
-                      {subtask.title}
-                    </span>
-                  </div>
+                    subtask={subtask}
+                    onToggle={handleToggleSubtask}
+                  />
                 ))}
               </div>
 
@@ -275,24 +343,11 @@ const TaskDetailModal = ({task, isOpen, onClose}) => {
                 {/* Lista de comentarios */}
                 <div className='space-y-3 mb-4 max-h-64 overflow-y-auto'>
                   {task.comments?.map((comment) => (
-                    <div
+                    <CommentItem
                       key={comment._id}
-                      className='flex gap-3 p-3 bg-amber-50 rounded-lg'>
-                      <div className='w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-semibold flex-shrink-0'>
-                        {comment.user?.name?.charAt(0).toUpperCase()}
-                      </div>
-                      <div className='flex-1'>
-                        <div className='flex items-baseline gap-2 mb-1'>
-                          <span className='font-medium text-gray-900 text-sm'>
-                            {comment.user?.name}
-                          </span>
-                          <span className='text-xs text-gray-500'>
-                            {formatDate(comment.createdAt)}
-                          </span>
-                        </div>
-                        <p className='text-gray-700 text-sm'>{comment.text}</p>
-                      </div>
-                    </div>
+                      comment={comment}
+                      formatDate={formatDate}
+                    />
                   ))}
                 </div>
 
@@ -327,33 +382,12 @@ const TaskDetailModal = ({task, isOpen, onClose}) => {
               </h3>
               <div className='space-y-2 max-h-64 overflow-y-auto'>
                 {task.history?.map((entry, index) => (
-                  <div key={index} className='flex gap-3 text-sm'>
-                    <div className='w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 text-xs font-semibold flex-shrink-0'>
-                      {entry.user?.name?.charAt(0).toUpperCase()}
-                    </div>
-                    <div className='flex-1'>
-                      <p className='text-gray-700'>
-                        <span className='font-medium'>{entry.user?.name}</span>{" "}
-                        {getActionLabel(entry.action)}
-                        {entry.previousValue && entry.newValue && (
-                          <span>
-                            {" "}
-                            de{" "}
-                            <span className='font-medium'>
-                              {entry.previousValue}
-                            </span>{" "}
-                            a{" "}
-                            <span className='font-medium'>
-                              {entry.newValue}
-                            </span>
-                          </span>
-                        )}
-                      </p>
-                      <p className='text-xs text-gray-500 mt-0.5'>
-                        {formatDate(entry.timestamp)}
-                      </p>
-                    </div>
-                  </div>
+                  <HistoryItem
+                    key={index}
+                    entry={entry}
+                    getActionLabel={getActionLabel}
+                    formatDate={formatDate}
+                  />
                 ))}
               </div>
             </div>
@@ -401,14 +435,13 @@ const TaskDetailModal = ({task, isOpen, onClose}) => {
                 </div>
 
                 {/* Aprobar y Cerrar (solo para admin en pendiente_revision) */}
-                {user?.role === "admin" &&
-                  task.status === "pendiente_revision" && (
-                    <button
-                      onClick={() => handleUpdate({status: "finalizada"})}
-                      className='w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-medium'>
-                      Aprobar y Cerrar
-                    </button>
-                  )}
+                {canApprove && (
+                  <button
+                    onClick={() => handleUpdate({status: "finalizada"})}
+                    className='w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-medium'>
+                    Aprobar y Cerrar
+                  </button>
+                )}
               </div>
             </div>
 
@@ -417,7 +450,7 @@ const TaskDetailModal = ({task, isOpen, onClose}) => {
               <h3 className='text-sm font-semibold text-gray-700 mb-3'>
                 Información
               </h3>
-              <div className='space-y-3'>
+              <div className='soace-y-3'>
                 {/* Creador */}
                 <div className='flex items-center gap-2 text-sm'>
                   <User size={16} className='text-gray-400' />

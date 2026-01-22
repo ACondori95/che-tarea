@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useCallback, useMemo} from "react";
 import {useAuth} from "../context/AuthContext";
 import {useTask} from "../context/TaskContext";
 import {useNavigate} from "react-router-dom";
@@ -16,67 +16,84 @@ const Dashboard = () => {
   const {user} = useAuth();
   const {tasks, loading} = useTask();
   const navigate = useNavigate();
-  const [recentActivity, setRecentActivity] = useState([]);
 
-  useEffect(() => {
-    if (tasks.length > 0) {
-      // Obtenr las 5 tareas más recientemente actualizadas
-      const sorted = [...tasks]
-        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-        .slice(0, 5);
-      setRecentActivity(sorted);
-    }
+  const recentActivity = useMemo(() => {
+    if (!tasks || tasks.length === 0) return [];
+
+    return [...tasks]
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+      .slice(0, 5);
   }, [tasks]);
 
   // Calcular estadísticas
-  const stats = {
-    total: tasks.length,
-    enProgreso: tasks.filter((t) => t.status === "en_progreso").length,
-    completadas: tasks.filter((t) => t.status === "finalizada").length,
-    urgentes: tasks.filter(
-      (t) => t.priority === "alta" && t.status !== "finalizada"
-    ).length,
-    pendientesRevision: tasks.filter((t) => t.status === "pendiente_revision")
-      .length,
-    porHacer: tasks.filter((t) => t.status === "por_hacer").length,
-  };
+  const stats = useMemo(() => {
+    return {
+      total: tasks.length,
+      enProgreso: tasks.filter((t) => t.status === "en_progreso").length,
+      completadas: tasks.filter((t) => t.status === "finalizada").length,
+      urgentes: tasks.filter(
+        (t) => t.priority === "alta" && t.status !== "finalizada",
+      ).length,
+      pendientesRevision: tasks.filter((t) => t.status === "pendiente_revision")
+        .length,
+      porHacer: tasks.filter((t) => t.status === "por_hacer").length,
+    };
+  }, [tasks]);
 
-  const statsCards = [
-    {
-      title: "Tareas Totales",
-      value: stats.total,
-      icon: BarChart3,
-      color: "bg-blue-500",
-      textColor: "text-blue-500",
-      bgLight: "bg-blue-50",
-    },
-    {
-      title: "En Progreso",
-      value: stats.enProgreso,
-      icon: Clock,
-      color: "bg-amber-500",
-      textColor: "text-amber-500",
-      bgLight: "bg-amber-50",
-    },
-    {
-      title: "Completadas",
-      value: stats.completadas,
-      icon: CheckCircle2,
-      color: "bg-green-500",
-      textColor: "text-green-500",
-      bgLight: "bg-green-50",
-    },
-    {
-      title: "Urgentes",
-      value: stats.urgentes,
-      icon: AlertCircle,
-      color: "bg-red-500",
-      textColor: "text-red-500",
-      bgLight: "bg-red-50",
-    },
-  ];
+  const statsCards = useMemo(
+    () => [
+      {
+        title: "Tareas Totales",
+        value: stats.total,
+        icon: BarChart3,
+        color: "bg-blue-500",
+        textColor: "text-blue-500",
+        bgLight: "bg-blue-50",
+      },
+      {
+        title: "En Progreso",
+        value: stats.enProgreso,
+        icon: Clock,
+        color: "bg-amber-500",
+        textColor: "text-amber-500",
+        bgLight: "bg-amber-50",
+      },
+      {
+        title: "Completadas",
+        value: stats.completadas,
+        icon: CheckCircle2,
+        color: "bg-green-500",
+        textColor: "text-green-500",
+        bgLight: "bg-green-50",
+      },
+      {
+        title: "Urgentes",
+        value: stats.urgentes,
+        icon: AlertCircle,
+        color: "bg-red-500",
+        textColor: "text-red-500",
+        bgLight: "bg-red-50",
+      },
+    ],
+    [stats],
+  );
 
-  const getStatusLabel = (status) => {
+  const progressPercentage = useMemo(() => {
+    return stats.total > 0
+      ? Math.round((stats.completadas / stats.total) * 100)
+      : 0;
+  }, [stats]);
+
+  const completedToday = useMemo(() => {
+    return tasks.filter((t) => {
+      if (t.status !== "finalizada" || !t.completedAt) return false;
+      const today = new Date().setHours(0, 0, 0, 0);
+      const completed = new Date(t.completedAt).setHours(0, 0, 0, 0);
+      return completed === today;
+    }).length;
+  }, [tasks]);
+
+  const getStatusLabel = useCallback((status) => {
     const labels = {
       por_hacer: "Por Hacer",
       en_progreso: "En Progreso",
@@ -84,9 +101,9 @@ const Dashboard = () => {
       finalizada: "Completada",
     };
     return labels[status] || status;
-  };
+  }, []);
 
-  const getStatusColor = (status) => {
+  const getStatusColor = useCallback((status) => {
     const colors = {
       por_hacer: "bg-gray-100 text-gray-700",
       en_progreso: "bg-blue-100 text-blue-700",
@@ -94,18 +111,18 @@ const Dashboard = () => {
       finalizada: "bg-green-100 text-green-700",
     };
     return colors[status] || "bg-gray-100 text-gray-700";
-  };
+  }, []);
 
-  const getPriorityColor = (priority) => {
+  const getPriorityColor = useCallback((priority) => {
     const colors = {
       alta: "text-red-500",
       media: "text-amber-500",
       baja: "text-green-500",
     };
     return colors[priority] || "text-gray-500";
-  };
+  }, []);
 
-  const getTimeAgo = (date) => {
+  const getTimeAgo = useCallback((date) => {
     const now = new Date();
     const updated = new Date(date);
     const diffInMinutes = Math.floor((now - updated) / (1000 * 60));
@@ -126,11 +143,16 @@ const Dashboard = () => {
       day: "2-digit",
       month: "short",
     });
-  };
+  }, []);
 
-  // Calcular progreso general
-  const progressPercentage =
-    stats.total > 0 ? Math.round((stats.completadas / stats.total) * 100) : 0;
+  const currentDate = useMemo(() => {
+    return new Date().toLocaleDateString("es-AR", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }, []);
 
   if (loading) {
     return (
@@ -145,14 +167,7 @@ const Dashboard = () => {
       {/* Bienvenida */}
       <div className='bg-gradient-to-r from-primary to-blue-700 rounded-lg shadow p-6 text-white'>
         <h1 className='text-3xl font-bold mb-2'>¡Hola, {user?.name}! 👋</h1>
-        <p className='text-blue-100 text-lg'>
-          {new Date().toLocaleDateString("es-AR", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
+        <p className='text-blue-100 text-lg'>{currentDate}</p>
         <div className='mt-4 flex items-center gap-2'>
           <div className='flex-1 bg-white/20 rounded-full h-2'>
             <div
@@ -302,54 +317,52 @@ const Dashboard = () => {
         </div>
         <div className='p-6'>
           {recentActivity.length > 0 ? (
-            <div>
-              <div className='space-y-4'>
-                {recentActivity.map((task) => (
+            <div className='space-y-4'>
+              {recentActivity.map((task) => (
+                <div
+                  key={task._id}
+                  onClick={() => navigate("/tasks")}
+                  className='flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer'>
                   <div
-                    key={task._id}
-                    onClick={() => navigate("/tasks")}
-                    className='flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer'>
-                    <div
-                      className={`w-10 h-10 rounded-full ${
-                        task.status === "finalizada"
-                          ? "bg-green-100"
-                          : task.status === "en_progreso"
+                    className={`w-10 h-10 rounded-full ${
+                      task.status === "finalizada"
+                        ? "bg-green-100"
+                        : task.status === "en_progreso"
                           ? "bg-blue-100"
                           : "bg-gray-100"
-                      } flex items-center justify-center flex-shrink-0`}>
-                      {task.status === "finalizada" ? (
-                        <CheckCircle2 className='text-green-500' size={20} />
-                      ) : task.status === "en_progreso" ? (
-                        <Clock className='text-blue-500' size={20} />
-                      ) : (
-                        <AlertCircle
-                          className={getPriorityColor(task.priority)}
-                          size={20}
-                        />
-                      )}
-                    </div>
-                    <div className='flex-1 min-w-0'>
-                      <p className='font-medium text-gray-900 truncate'>
-                        {task.title}
-                      </p>
-                      <p className='text-sm text-gray-500 mt-1'>
-                        {getTimeAgo(task.updatedAt)}
-                        {task.assignedTo && (
-                          <span className='ml-2'>
-                            • Asignado a {task.assignedTo.name}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <span
-                      className={`px-3 py-1 ${getStatusColor(
-                        task.status
-                      )} text-xs font-medium rounded-full flex-shrink-0`}>
-                      {getStatusLabel(task.status)}
-                    </span>
+                    } flex items-center justify-center flex-shrink-0`}>
+                    {task.status === "finalizada" ? (
+                      <CheckCircle2 className='text-green-500' size={20} />
+                    ) : task.status === "en_progreso" ? (
+                      <Clock className='text-blue-500' size={20} />
+                    ) : (
+                      <AlertCircle
+                        className={getPriorityColor(task.priority)}
+                        size={20}
+                      />
+                    )}
                   </div>
-                ))}
-              </div>
+                  <div className='flex-1 min-w-0'>
+                    <p className='font-medium text-gray-900 truncate'>
+                      {task.title}
+                    </p>
+                    <p className='text-sm text-gray-500 mt-1'>
+                      {getTimeAgo(task.updatedAt)}
+                      {task.assignedTo && (
+                        <span className='ml-2'>
+                          • Asignado a {task.assignedTo.name}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-3 py-1 ${getStatusColor(
+                      task.status,
+                    )} text-xs font-medium rounded-full flex-shrink-0`}>
+                    {getStatusLabel(task.status)}
+                  </span>
+                </div>
+              ))}
             </div>
           ) : (
             <div className='text-center py-12'>
@@ -395,20 +408,7 @@ const Dashboard = () => {
             <div className='p-4 bg-green-50 rounded-lg'>
               <p className='text-sm text-green-600 mb-1'>Completadas hoy</p>
               <p className='text-2xl font-bold text-green-900'>
-                {
-                  tasks.filter((t) => {
-                    if (t.status !== "finalizada" || !t.completedAt)
-                      return false;
-                    const today = new Date().setHours(0, 0, 0, 0);
-                    const completed = new Date(t.completedAt).setHours(
-                      0,
-                      0,
-                      0,
-                      0
-                    );
-                    return completed === today;
-                  }).length
-                }
+                {completedToday}
               </p>
             </div>
           </div>

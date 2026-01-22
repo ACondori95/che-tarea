@@ -16,7 +16,15 @@ const register = async (req, res) => {
     if (!name || !email || !password) {
       return res
         .status(400)
-        .json({success: false, message: "Por fvor completa todos los campos"});
+        .json({success: false, message: "Por favor completa todos los campos"});
+    }
+
+    // Validar longitud de contraseña
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "La contraseña debe tener al menos 6 caracteres",
+      });
     }
 
     // Verificar si el usuario ya existe
@@ -56,6 +64,14 @@ const register = async (req, res) => {
     });
   } catch (error) {
     console.error("Error en registro:", error);
+
+    // Manejar error de email duplicado (índice único)
+    if (error.code === 11000) {
+      return res
+        .status(400)
+        .json({success: false, message: "El email ya está registrado"});
+    }
+
     res.status(500).json({
       success: false,
       message: "Error al registrar usuario",
@@ -83,10 +99,17 @@ const login = async (req, res) => {
 
     // Buscar usuario (incluir password para comparar)
     const user = await User.findOne({email: email.toLowerCase()}).select(
-      "+password"
+      "+password",
     );
 
     if (!user) {
+      return res
+        .status(401)
+        .json({success: false, message: "Credenciales inválidas"});
+    }
+
+    // Verificar si ei el usuario está activo ANTES de validar contraseña
+    if (!user.isActive) {
       return res
         .status(401)
         .json({success: false, message: "Credenciales inválidas"});
@@ -99,14 +122,6 @@ const login = async (req, res) => {
       return res
         .status(401)
         .json({success: false, message: "Credenciales inválidas"});
-    }
-
-    // Verificar si el usuario está activo
-    if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: "Usuario inactivo. Contacta al administrador.",
-      });
     }
 
     // Generar token
@@ -144,6 +159,12 @@ const login = async (req, res) => {
 const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate("defaultTag");
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({success: false, message: "Usuario no encontrado"});
+    }
 
     res.status(200).json({
       success: true,
@@ -247,10 +268,16 @@ const changePassword = async (req, res) => {
 
     const user = await User.findById(req.user._id).select("+password");
 
+    if (!user) {
+      return res
+        .status(404)
+        .json({success: false, message: "Usuario no encontrado"});
+    }
+
     // Verificar la contraseña actual
     const isPasswordValid = await bcrypt.compare(
       currentPassword,
-      user.password
+      user.password,
     );
 
     if (!isPasswordValid) {
@@ -267,7 +294,7 @@ const changePassword = async (req, res) => {
 
     res
       .status(200)
-      .json({success: false, message: "Contraseña actualizada exitosamente"});
+      .json({success: true, message: "Contraseña actualizada exitosamente"});
   } catch (error) {
     console.error("Error al cambiar contraseña:", error);
     res.status(500).json({

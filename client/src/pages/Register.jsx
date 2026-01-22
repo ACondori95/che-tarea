@@ -13,16 +13,26 @@ const Register = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   const handleChange = (e) => {
     const {name, value} = e.target;
     setFormData((prev) => ({...prev, [name]: value}));
+
+    if (name === "password") {
+      if (value.length > 0 && value.length < 6) {
+        setPasswordError("La contraseña debe tener al menos 6 caracteres");
+      } else {
+        setPasswordError("");
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password.length < 6) {
+      setPasswordError("La contraseña debe tener al menos 6 caracteres");
       return;
     }
 
@@ -177,7 +187,7 @@ const Register = () => {
             {/* Submit button */}
             <button
               type='submit'
-              disabled={isLoading}
+              disabled={isLoading || !!passwordError}
               className='w-full bg-primary text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed mt-6'>
               {isLoading ? "Creando cuenta..." : "Registrarse"}
             </button>

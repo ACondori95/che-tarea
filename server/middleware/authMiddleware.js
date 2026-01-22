@@ -14,6 +14,15 @@ const protect = async (req, res, next) => {
       // Obtener token del header
       token = req.headers.authorization.split(" ")[1];
 
+      // Validar que JWT_SECRET esté configurado
+      if (!process.env.JWT_SECRET) {
+        console.error("JWT_SECRET no está configurado");
+        return res.status(500).json({
+          success: false,
+          message: "Error de configuración del servidor",
+        });
+      }
+
       // Verificar token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
@@ -35,13 +44,24 @@ const protect = async (req, res, next) => {
       next();
     } catch (error) {
       console.error("Error en autenticación:", error.message);
-      return res
-        .status(401)
-        .json({success: false, message: "No autorizado, token inválido"});
-    }
-  }
 
-  if (!token) {
+      // Diferenciar tipos de error JWT
+      if (error.name === "TokenExpiredError") {
+        return res
+          .status(401)
+          .json({success: false, message: "Token expirado"});
+      }
+
+      if (error.name === "JsonWebTokenError") {
+        return res
+          .status(401)
+          .json({success: false, message: "Token inválido"});
+      }
+
+      // Error genérico
+      return res.status(401).json({success: false, message: "No autorizado"});
+    }
+  } else {
     return res
       .status(401)
       .json({success: false, message: "No autorizado, no hay token"});

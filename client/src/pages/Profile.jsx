@@ -1,9 +1,15 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {useAuth} from "../context/AuthContext";
 import {useTask} from "../context/TaskContext";
 import axios from "../api/axios";
 import {Bell, Camera, Lock, Save, Tag} from "lucide-react";
 import {toast} from "react-toastify";
+
+const INITIAL_PASSWORD_DATA = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
 
 const Profile = () => {
   const {user, updateProfile} = useAuth();
@@ -20,11 +26,7 @@ const Profile = () => {
     appNotifications: true,
   });
 
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+  const [passwordData, setPasswordData] = useState(INITIAL_PASSWORD_DATA);
 
   useEffect(() => {
     if (user) {
@@ -44,7 +46,7 @@ const Profile = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const result = await updateProfile(profileData);
+    await updateProfile(profileData);
 
     setIsLoading(false);
   };
@@ -71,11 +73,7 @@ const Profile = () => {
       });
 
       toast.success("Contraseña actualizada exitosamente");
-      setPasswordData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+      setPasswordData(INITIAL_PASSWORD_DATA);
     } catch (error) {
       const message =
         error.response?.data?.message || "Error al cambiar contraseña";
@@ -85,14 +83,14 @@ const Profile = () => {
     }
   };
 
-  const getInitials = (name) => {
+  const getInitials = useCallback((name) => {
     return name
       .split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);
-  };
+  }, []);
 
   return (
     <div className='max-w-4xl mx-auto space-y-6'>
@@ -119,7 +117,9 @@ const Profile = () => {
                 getInitials(user?.name || "U")
               )}
             </div>
-            <button className='absolute bottom-0 right-0 p-2 bg-primary text-white rounded-full hover:bg-blue-700 transition shadow-lg'>
+            <button
+              className='absolute bottom-0 right-0 p-2 bg-primary text-white rounded-full hover:bg-blue-700 transition shadow-lg'
+              aria-label='Cambiar avatar'>
               <Camera size={16} />
             </button>
           </div>
@@ -146,10 +146,13 @@ const Profile = () => {
         <form onSubmit={handleProfileUpdate} className='p-6 space-y-4'>
           {/* Nombre Completo */}
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
+            <label
+              htmlFor='name'
+              className='block text-sm font-medium text-gray-700 mb-2'>
               Nombre Completo
             </label>
             <input
+              id='name'
               type='text'
               value={profileData.name}
               onChange={(e) =>
@@ -161,10 +164,13 @@ const Profile = () => {
 
           {/* Correo Electrónico */}
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
+            <label
+              htmlFor='email'
+              className='block text-sm font-medium text-gray-700 mb-2'>
               Correo Electrónico
             </label>
             <input
+              id='email'
               type='text'
               value={profileData.email}
               disabled
@@ -177,11 +183,14 @@ const Profile = () => {
 
           {/* Etiqueta por Defecto */}
           <div>
-            <label className='text-sm font-medium text-gray-700 mb-2 flex items-center gap-2'>
+            <label
+              htmlFor='defaultTag'
+              className='text-sm font-medium text-gray-700 mb-2 flex items-center gap-2'>
               <Tag size={16} />
               Etiqueta por Defecto
             </label>
             <select
+              id='defaultTag'
               value={profileData.defaultTag}
               onChange={(e) =>
                 setProfileData({...profileData, defaultTag: e.target.value})
@@ -218,11 +227,15 @@ const Profile = () => {
         <form onSubmit={handlePasswordChange} className='p-6 space-y-4'>
           {/* Contraseña Actual */}
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
+            <label
+              htmlFor='currentPassword'
+              className='block text-sm font-medium text-gray-700 mb-2'>
               Contraseña Actual
             </label>
             <input
+              id='currentPassword'
               type='password'
+              autoComplete='current-password'
               value={passwordData.currentPassword}
               onChange={(e) =>
                 setPasswordData({
@@ -237,11 +250,15 @@ const Profile = () => {
 
           {/* Nueva Contraseña */}
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
+            <label
+              htmlFor='newPassword'
+              className='block text-sm font-medium text-gray-700 mb-2'>
               Nueva Contraseña
             </label>
             <input
+              id='newPassword'
               type='password'
+              autoComplete='new-password'
               value={passwordData.newPassword}
               onChange={(e) =>
                 setPasswordData({
@@ -257,11 +274,15 @@ const Profile = () => {
 
           {/* Confirmar Contraseña */}
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
+            <label
+              htmlFor='confirmPassword'
+              className='block text-sm font-medium text-gray-700 mb-2'>
               Confirmar Nueva Contraseña
             </label>
             <input
+              id='confirmPassword'
               type='password'
+              autoComplete='new-password'
               value={passwordData.confirmPassword}
               onChange={(e) =>
                 setPasswordData({

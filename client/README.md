@@ -1,16 +1,171 @@
-# React + Vite
+# Che Tarea - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema de gestión de tareas colaborativo con tablero Kanban, desarrollado con React y Vite.
 
-Currently, two official plugins are available:
+## 🚀 Características
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 📋 Tablero Kanban interactivo con drag & drop
+- 👥 Gestión de equipos y usuarios
+- 🏷️ Sistema de etiquetas personalizables
+- 📊 Dashboard con estadísticas en tiempo real
+- 🔔 Sistema de notificaciones
+- 🎨 Interfaz moderna y responsive
+- 🔐 Autenticación y autorización
+- ♿ Accesible (WCAG 2.1)
 
-## React Compiler
+## 🛠️ Tecnologías
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 19** - Librería de UI
+- **Vite** - Build tool y dev server
+- **React Router** - Navegación
+- **Tailwind CSS** - Estilos
+- **@dnd-kit** - Drag and drop
+- **Axios** - Cliente HTTP
+- **React Toastify** - Notificaciones
+- **Lucide React** - Iconos
 
-## Expanding the ESLint configuration
+## 📋 Prerequisitos
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Node.js >= 18.0.0
+- npm >= 9.0.0
+
+## 🔧 Instalación
+
+1. Clona el repositorio:
+
+```bash
+git clone <url-del-repositorio>
+cd che-tarea-frontend
+```
+
+2. Instala las dependencias:
+
+```bash
+npm install
+```
+
+3. Configura las variables de entorno:
+
+```bash
+cp .env.example .env
+```
+
+Edita `.env` con tus configuraciones:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+## 🚀 Uso
+
+### Desarrollo
+
+```bash
+npm run dev
+```
+
+La aplicación estará disponible en `http://localhost:5173`
+
+### Build de producción
+
+```bash
+npm run build
+```
+
+### Preview del build
+
+```bash
+npm run preview
+```
+
+### Linting
+
+```bash
+npm run lint          # Verificar errores
+npm run lint:fix      # Corregir errores automáticamente
+```
+
+### Formateo
+
+```bash
+npm run format        # Formatear código con Prettier
+```
+
+## 📁 Estructura del Proyecto
+
+```
+src/
+├── api/              # Configuración de Axios
+├── components/       # Componentes reutilizables
+│   ├── kanban/      # Componentes del tablero Kanban
+│   └── layout/      # Componentes de layout
+├── context/         # Contextos de React
+├── pages/           # Páginas de la aplicación
+├── App.jsx          # Componente principal
+├── main.jsx         # Punto de entrada
+└── index.css        # Estilos globales
+```
+
+## 🎨 Colores del Tema
+
+- **Primary**: `#2563eb` (blue-600)
+- **Urgent**: `#ef4444` (red-500)
+- **Medium**: `#f59e0b` (amber-500)
+- **Low**: `#22c55e` (green-500)
+
+## 🔐 Rutas de la Aplicación
+
+### Públicas
+
+- `/login` - Inicio de sesión
+- `/register` - Registro de usuarios
+
+### Protegidas
+
+- `/dashboard` - Panel principal
+- `/tasks` - Tablero Kanban
+- `/profile` - Perfil de usuario
+- `/archive` - Tareas archivadas
+- `/team` - Gestión de equipo (solo admin)
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add: nueva característica'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+## 📝 Convenciones de Código
+
+- Usar ES6+ features
+- Componentes funcionales con hooks
+- Nombres descriptivos en español para variables/funciones
+- Comentarios en español
+- 2 espacios para indentación
+- Seguir las reglas de ESLint configuradas
+
+## 🐛 Reporte de Bugs
+
+Si encuentras un bug, por favor abre un issue con:
+
+- Descripción detallada del problema
+- Pasos para reproducirlo
+- Comportamiento esperado vs actual
+- Screenshots si es posible
+- Información del navegador/OS
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
+
+## 👥 Autores
+
+- **Tu Nombre** - _Desarrollo inicial_ - [Tu GitHub](https://github.com/tu-usuario)
+
+## 🙏 Agradecimientos
+
+- Equipo de React
+- Comunidad de Vite
+- Contribuidores de Tailwind CSS
+- Todos los que contribuyeron al proyecto

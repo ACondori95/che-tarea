@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "La contraseña es obligatoria"],
       minlength: [6, "La contraseña debe tener al menos 6 caracteres"],
-      select: false, // No incluir password en queries por defecto
+      select: false,
     },
     role: {type: String, enum: ["admin", "user"], default: "user"},
     avatar: {type: String, default: ""},
@@ -33,7 +33,10 @@ const userSchema = new mongoose.Schema(
     appNotifications: {type: Boolean, default: true},
     isActive: {type: Boolean, default: true},
   },
-  {timestamps: true} // Agrega createdAt y updatedAt automáticamente
+  {timestamps: true},
 );
+
+// Índice en isActive para filtrar usuarios activos
+userSchema.index({isActive: 1});
 
 module.exports = mongoose.model("User", userSchema);

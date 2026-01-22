@@ -38,13 +38,25 @@ const getTagById = async (req, res) => {
   try {
     const tag = await Tag.findById(req.params.id).populate(
       "createdBy",
-      "name email"
+      "name email",
     );
 
     if (!tag) {
       return res
         .status(404)
         .json({success: false, message: "Etiqueta no encontrada"});
+    }
+
+    // Verificar permisos: solo el creador, admin o si es default
+    if (
+      req.user.role !== "admin" &&
+      tag.createdBy._id.toString() !== req.user._id.toString() &&
+      !tag.isDefault
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para ver esta etiqueta",
+      });
     }
 
     res.status(200).json({success: true, data: tag});
@@ -67,7 +79,7 @@ const createTag = async (req, res) => {
   try {
     const {name, color, isDefault} = req.body;
 
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.status(400).json({
         success: false,
         message: "El nombre de la etiqueta es obligatoria",
@@ -150,7 +162,16 @@ const updateTag = async (req, res) => {
 
     const {name, color, isDefault} = req.body;
 
-    if (name) tag.name = name.trim();
+    if (name) {
+      const trimmedName = name.trim();
+      if (!trimmedName) {
+        return res
+          .status(400)
+          .json({success: false, message: "El nombre no puede estar vacío"});
+      }
+      tag.name = trimmedName;
+    }
+
     if (color) tag.color = color;
 
     // Solo admin puede cambiar isDefault
@@ -220,7 +241,7 @@ const deleteTag = async (req, res) => {
     await tag.deleteOne();
 
     res.status(200).json({
-      success: false,
+      success: true,
       message: "Etiqueta eliminada exitosamente",
       data: {},
     });

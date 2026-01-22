@@ -11,17 +11,18 @@ const tagSchema = new mongoose.Schema(
     color: {
       type: String,
       required: [true, "El color es obligatorio"],
-      default: "#2563eb", // blue-600
-      match: [/^#[0-9A-F]{6}$/i, "Formato de color hexadecimal inválido"],
+      default: "#2563eb",
+      match: [/^#[0-9A-Fa-f]{6}$/i, "Formato de color hexadecimal inválido"],
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
     isDefault: {type: Boolean, default: false},
   },
-  {timestamps: true}
+  {timestamps: true},
 );
 
 // Índice compuesto para evitar etiquetas duplicadas por usuario

@@ -1,4 +1,10 @@
-import {createContext, useContext, useEffect, useState} from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import axios from "../api/axios";
 import {toast} from "react-toastify";
 
@@ -17,8 +23,7 @@ export const TaskProvider = ({children}) => {
   const [loading, setLoading] = useState(true);
   const [tags, setTags] = useState([]);
 
-  // Obtener todas las tareas
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     try {
       setLoading(true);
       const {data} = await axios.get("/tasks");
@@ -29,19 +34,17 @@ export const TaskProvider = ({children}) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Obtener etiquetas
-  const fetchTags = async () => {
+  const fetchTags = useCallback(async () => {
     try {
       const {data} = await axios.get("/tags");
       setTags(data.data);
     } catch (error) {
       console.error("Error al cargar etiquetas:", error);
     }
-  };
+  }, []);
 
-  // Crear tarea
   const createTask = async (taskData) => {
     try {
       const {data} = await axios.post("/tasks", taskData);
@@ -55,12 +58,11 @@ export const TaskProvider = ({children}) => {
     }
   };
 
-  // Actualizar tarea
   const updateTask = async (taskId, updates) => {
     try {
       const {data} = await axios.put(`/tasks/${taskId}`, updates);
       setTasks((prev) =>
-        prev.map((task) => (task._id === taskId ? data.data : task))
+        prev.map((task) => (task._id === taskId ? data.data : task)),
       );
       toast.success("Tarea actualizada exitosamente");
       return {success: true, data: data.data};
@@ -72,14 +74,16 @@ export const TaskProvider = ({children}) => {
     }
   };
 
-  // Eliminar tarea
   const deleteTask = async (taskId) => {
+    const previousTasks = tasks;
+    setTasks((prev) => prev.filter((task) => task._id !== taskId));
+
     try {
       await axios.delete(`/tasks/${taskId}`);
-      setTasks((prev) => prev.filter((task) => task._id !== taskId));
       toast.success("Tarea eliminada exitosamente");
       return {success: true};
     } catch (error) {
+      setTasks(previousTasks);
       const message =
         error.response?.data?.message || "Error al eliminar tarea";
       toast.error(message);
@@ -87,52 +91,55 @@ export const TaskProvider = ({children}) => {
     }
   };
 
-  // Agregar subtarea
   const addSubtask = async (taskId, subtaskTitle) => {
     try {
       const {data} = await axios.post(`/tasks/${taskId}/subtasks`, {
         title: subtaskTitle,
       });
       setTasks((prev) =>
-        prev.map((task) => (task._id === taskId ? data.data : task))
+        prev.map((task) => (task._id === taskId ? data.data : task)),
       );
       toast.success("Subtarea agregada");
       return {success: true, data: data.data};
     } catch (error) {
-      toast.error("Error al agregar subtarea");
-      return {success: false};
+      const message =
+        error.response?.data?.message || "Error al agregar subtarea";
+      toast.error(message);
+      return {success: false, message};
     }
   };
 
-  // Actualizar subtarea
   const updateSubtask = async (taskId, subtaskId, updates) => {
     try {
       const {data} = await axios.put(
         `/tasks/${taskId}/subtasks/${subtaskId}`,
-        updates
+        updates,
       );
       setTasks((prev) =>
-        prev.map((task) => (task._id === taskId ? data.data : task))
+        prev.map((task) => (task._id === taskId ? data.data : task)),
       );
       return {success: true, data: data.data};
     } catch (error) {
-      toast.error("Error al actualizar subtarea");
-      return {success: false};
+      const message =
+        error.response?.data?.message || "Error al actualizar subtarea";
+      toast.error(message);
+      return {success: false, message};
     }
   };
 
-  // Agregar comentario
   const addComment = async (taskId, text) => {
     try {
       const {data} = await axios.post(`/tasks/${taskId}/comments`, {text});
       setTasks((prev) =>
-        prev.map((task) => (task._id === taskId ? data.data : task))
+        prev.map((task) => (task._id === taskId ? data.data : task)),
       );
       toast.success("Comentario agregado");
       return {success: true, data: data.data};
     } catch (error) {
-      toast.error("Error al agregar comentario");
-      return {success: false};
+      const message =
+        error.response?.data?.message || "Error al agregar comentario";
+      toast.error(message);
+      return {success: false, message};
     }
   };
 
@@ -140,7 +147,7 @@ export const TaskProvider = ({children}) => {
   useEffect(() => {
     fetchTasks();
     fetchTags();
-  }, []);
+  }, [fetchTasks, fetchTags]);
 
   const value = {
     tasks,

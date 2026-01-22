@@ -69,12 +69,13 @@ const getTaskById = async (req, res) => {
     }
 
     // Verificar permisos
-    if (
-      req.user.role !== "admin" &&
-      task.createdBy._id.toString() !== req.user._id.toString() &&
-      (!task.assignedTo ||
-        task.assignedTo._id.toString() !== req.user._id.toString())
-    ) {
+    const isCreator = task.createdBy._id.toString() == req.user._id.toString();
+    const isAssignee =
+      task.assignedTo &&
+      task.assignedTo._id.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+
+    if (!isAdmin && !isCreator && !isAssignee) {
       return res.status(403).json({
         success: false,
         message: "No tienes permiso para ver esta tarea",
@@ -101,10 +102,26 @@ const createTask = async (req, res) => {
   try {
     const {title, description, priority, tags, assignedTo, dueDate} = req.body;
 
-    if (!title) {
+    if (!title || !title.trim()) {
       return res
         .status(400)
         .json({success: false, message: "El título es obligatorio"});
+    }
+
+    // Validar que assignedTo sea un usuario válido si se proporciona
+    if (assignedTo) {
+      const assignedUser = await User.findById(assignedTo);
+      if (!assignedUser) {
+        return res
+          .status(400)
+          .json({success: false, message: "El usuario asignado no existe"});
+      }
+      if (!assignedUser.isActive) {
+        return res.status(400).json({
+          success: false,
+          message: "No se puede asignar a un usuario inactivo",
+        });
+      }
     }
 
     // Crear tarea
@@ -153,12 +170,12 @@ const updateTask = async (req, res) => {
     }
 
     // Verificar permisos
-    if (
-      req.user.role !== "admin" &&
-      task.createdBy.toString() !== req.user._id.toString() &&
-      (!task.assignedTo ||
-        task.assignedTo.toString() !== req.user._id.toString())
-    ) {
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+    const isAssignee =
+      task.assignedTo && task.assignedTo.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+
+    if (!isAdmin && !isCreator && !isAssignee) {
       return res.status(403).json({
         success: false,
         message: "No tienes permiso para actualizar esta tarea",
@@ -167,6 +184,22 @@ const updateTask = async (req, res) => {
 
     const {title, description, status, priority, tags, assignedTo, dueDate} =
       req.body;
+
+    // Validar assignedTo si se proporciona
+    if (assignedTo && assignedTo !== task.assignedTo?.toString()) {
+      const assignedUser = await User.findById(assignedTo);
+      if (!assignedUser) {
+        return res
+          .status(400)
+          .json({success: false, message: "El usuario asignado no existe"});
+      }
+      if (!assignedUser.isActive) {
+        return res.status(400).json({
+          success: false,
+          message: "No se puede asignar a un usuario inactivo",
+        });
+      }
+    }
 
     // Registrar cambios en el historial
     if (status && status !== task.status) {
@@ -292,6 +325,19 @@ const addSubtask = async (req, res) => {
         .json({success: false, message: "Tarea no encontrada"});
     }
 
+    // Verificar permisos
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+    const isAssignee =
+      task.assignedTo && task.assignedTo.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+
+    if (!isAdmin && !isCreator && !isAssignee) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para modificar esta tarea",
+      });
+    }
+
     task.subtasks.push({title, completed: false});
     await task.save();
 
@@ -331,6 +377,19 @@ const updateSubtask = async (req, res) => {
         .json({success: false, message: "Tarea no encontrada"});
     }
 
+    // Verificar permisos
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+    const isAssignee =
+      task.assignedTo && task.assignedTo.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+
+    if (!isAdmin && !isCreator && !isAssignee) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para modificar esta tarea",
+      });
+    }
+
     const subtask = task.subtasks.id(req.params.subtaskId);
 
     if (!subtask) {
@@ -339,7 +398,16 @@ const updateSubtask = async (req, res) => {
         .json({success: false, message: "Subtarea no encontrada"});
     }
 
-    if (title) subtask.title = title;
+    if (title) {
+      const trimmedTitle = title.trim();
+      if (!trimmedTitle) {
+        return res
+          .status(400)
+          .json({success: false, message: "El título no puede estar vacío"});
+      }
+      subtask.title = trimmedTitle;
+    }
+
     if (completed !== undefined) {
       subtask.completed = completed;
       subtask.completedAt = completed ? new Date() : null;
@@ -376,9 +444,31 @@ const deleteSubtask = async (req, res) => {
     const task = await Task.findById(req.params.id);
 
     if (!task) {
-      return res
-        .status(404)
-        .json({success: false, message: "Tarea no encontrada"});
+      return res.status(404).json({
+        success: false,
+        message: "Tarea no encontrada",
+      });
+    }
+
+    // Verificar permisos
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+    const isAssignee =
+      task.assignedTo && task.assignedTo.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+    if (!isAdmin && !isCreator && !isAssignee) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para modificar esta tarea",
+      });
+    }
+
+    // Verificar que la subtarea existe antes de eliminar
+    const subtask = task.subtasks.id(req.params.subtaskId);
+    if (!subtask) {
+      return res.status(404).json({
+        success: false,
+        message: "Subtarea no encontrada",
+      });
     }
 
     task.subtasks.pull(req.params.subtaskId);
@@ -408,7 +498,7 @@ const addComment = async (req, res) => {
   try {
     const {text} = req.body;
 
-    if (!text) {
+    if (!text || !text.trim()) {
       return res
         .status(400)
         .json({success: false, message: "El comentario no puede estar vacío"});
@@ -422,12 +512,29 @@ const addComment = async (req, res) => {
         .json({success: false, message: "Tarea no encontrada"});
     }
 
-    task.comments.push({user: req.user._id, text});
+    // Verificar permisos
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+    const isAssignee =
+      task.assignedTo && task.assignedTo.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === "admin";
 
-    task.history.push({action: "commented", user: req.user._id, comment: text});
+    if (!isAdmin && !isCreator && !isAssignee) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para comentar en esta tarea",
+      });
+    }
+
+    task.comments.push({user: req.user._id, text: text.trim()});
+    task.history.push({
+      action: "commented",
+      user: req.user._id,
+      comment: text.trim(),
+    });
 
     await task.save();
     await task.populate("comments.user", "name avatar");
+    await task.populate("history.user", "name avatar");
 
     res.status(200).json({
       success: true,
@@ -457,6 +564,16 @@ const restoreTask = async (req, res) => {
       return res
         .status(404)
         .json({success: false, message: "Tarea no encontrada"});
+    }
+
+    // Verificar permisos
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+    if (!isAdmin && !isCreator) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para restaurar esta tarea",
+      });
     }
 
     task.status = "por_hacer";
@@ -491,7 +608,7 @@ const restoreTask = async (req, res) => {
 /**
  * @desc    Ejecutar limpieza manual de tareas expiradas (testing)
  * @route   POST /api/tasks/cleanup
- * @access  Provate/Admin
+ * @access  Private/Admin
  */
 const manualCleanup = async (req, res) => {
   try {

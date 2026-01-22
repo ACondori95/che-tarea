@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const subtaskSchema = new mongoose.Schema({
-  title: {type: String, required: true, trim: true},
+  title: {type: String, required: true, trim: true, maxlength: 200},
   completed: {type: Boolean, default: false},
   completedAt: {type: Date, default: null},
 });
@@ -27,7 +27,7 @@ const historyEntrySchema = new mongoose.Schema({
 
 const commentSchema = new mongoose.Schema({
   user: {type: mongoose.Schema.Types.ObjectId, ref: "User", required: true},
-  text: {type: String, required: true, trim: true},
+  text: {type: String, required: true, trim: true, maxlength: 500},
   createdAt: {type: Date, default: Date.now},
 });
 
@@ -67,18 +67,18 @@ const taskSchema = new mongoose.Schema(
     comments: [commentSchema],
     dueDate: {type: Date, default: null},
     completedAt: {type: Date, default: null},
-    // Auto-borrado: fecha en que se eliminará automáticamente
     autoDeleteAt: {type: Date, default: null},
     isArchived: {type: Boolean, default: false},
   },
-  {timestamps: true}
+  {timestamps: true},
 );
 
 // Índices para mejorar performance de queries
 taskSchema.index({status: 1, createdBy: 1});
-taskSchema.index({assignedTo: 1});
-taskSchema.index({autoDeleteAt: 1});
+taskSchema.index({assignedTo: 1, status: 1});
+taskSchema.index({autoDeleteAt: 1}, {sparse: true});
 taskSchema.index({createdAt: -1});
+taskSchema.index({dueDate: 1}, {sparse: true});
 
 // Método para calcular el progreso de subtareas
 taskSchema.methods.getSubtaskProgress = function () {

@@ -1,17 +1,26 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {AlertTriangle, Clock, Filter, RotateCcw, Trash2} from "lucide-react";
 import {useTask} from "../context/TaskContext";
 import {useAuth} from "../context/AuthContext";
 import axios from "../api/axios";
 import {toast} from "react-toastify";
 
+const PRIORITY_COLORS = {alta: "bg-urgent", media: "bg-medium", baja: "bg-low"};
+
+const PRIORITY_LABELS = {alta: "Alta", media: "Media", baja: "Baja"};
+
+const FILTER_OPTIONS = [
+  {value: "recent", label: "Más Recientes"},
+  {value: "oldest", label: "Más Antiguas"},
+  {value: "urgent", label: "Más Urgentes"},
+];
+
 const Archive = () => {
-  const {updateTask, deleteTask} = useTask();
+  const {deleteTask} = useTask();
   const {user} = useAuth();
   const [archivedTasks, setArchivedTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("recent"); // recent, oldest, urgent
-
+  const [filter, setFilter] = useState("recent");
   useEffect(() => {
     fetchArchivedTasks();
   }, []);
@@ -41,7 +50,7 @@ const Archive = () => {
   const handleDeleteTask = async (taskId) => {
     if (
       window.confirm(
-        "¿Estás seguro de que deseas eliminar permanentemente esta tarea?"
+        "¿Estás seguro de que deseas eliminar permanentemente esta tarea?",
       )
     ) {
       const result = await deleteTask(taskId);
@@ -51,27 +60,27 @@ const Archive = () => {
     }
   };
 
-  const getDaysUntilDeletion = (autoDeleteAt) => {
+  const getDaysUntilDeletion = useCallback((autoDeleteAt) => {
     if (!autoDeleteAt) return null;
     const now = new Date();
     const deleteDate = new Date(autoDeleteAt);
     const diffTime = deleteDate - now;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
-  };
+  }, []);
 
-  const sortTasks = (tasks) => {
-    let sorted = [...tasks];
+  const sortedTasks = useMemo(() => {
+    let sorted = [...archivedTasks];
 
     switch (filter) {
       case "recent":
         sorted.sort(
-          (a, b) => new Date(b.completedAt) - new Date(a.completedAt)
+          (a, b) => new Date(b.completedAt) - new Date(a.completedAt),
         );
         break;
       case "oldest":
         sorted.sort(
-          (a, b) => new Date(a.completedAt) - new Date(b.completedAt)
+          (a, b) => new Date(a.completedAt) - new Date(b.completedAt),
         );
         break;
       case "urgent":
@@ -85,21 +94,18 @@ const Archive = () => {
     }
 
     return sorted;
-  };
+  }, [archivedTasks, filter]);
 
-  const sortedTasks = sortTasks(archivedTasks);
-
-  const priorityColors = {
-    alta: "bg-urgent",
-    media: "bg-medium",
-    baja: "bg-low",
-  };
-
-  const priorityLabels = {
-    alta: "Alta",
-    media: "Media",
-    baja: "Baja",
-  };
+  const statistics = useMemo(() => {
+    return {
+      total: sortedTasks.length,
+      urgentDeletion: sortedTasks.filter((t) => {
+        const days = getDaysUntilDeletion(t.autoDeleteAt);
+        return days !== null && days <= 3;
+      }).length,
+      highPriority: sortedTasks.filter((t) => t.priority === "alta").length,
+    };
+  }, [sortedTasks, getDaysUntilDeletion]);
 
   if (loading) {
     return (
@@ -151,33 +157,14 @@ const Archive = () => {
             Filtrar:
           </span>
           <div className='flex gap-2'>
-            <button
-              onClick={() => setFilter("recent")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                filter === "recent"
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
-              Más Recientes
-            </button>
-            <button
-              onClick={() => setFilter("oldest")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                filter === "oldest"
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
-              Más Antiguas
-            </button>
-            <button
-              onClick={() => setFilter("urgent")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                filter === "urgent"
-                  ? "bg-primary text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}>
-              Más Urgentes
-            </button>
+            {FILTER_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setFilter(option.value)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${filter === option.value ? "bg-primary text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}>
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -213,9 +200,9 @@ const Archive = () => {
                     <div className='flex items-start gap-3 mb-3'>
                       <span
                         className={`px-3 py-1 rounded-full text-white text-xs font-medium ${
-                          priorityColors[task.priority]
+                          PRIORITY_COLORS[task.priority]
                         }`}>
-                        {priorityLabels[task.priority]}
+                        {PRIORITY_LABELS[task.priority]}
                       </span>
                       <h3 className='text-lg font-semibold text-gray-900 flex-1'>
                         {task.title}
@@ -251,7 +238,8 @@ const Archive = () => {
                       {task.assignedTo && (
                         <div className='flex items-center gap-2'>
                           <div className='w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold'>
-                            {task.assignedTo.name?.charAt(0).toUpperCase()}
+                            {task.assignedTo.name?.charAt(0).toUpperCase() ||
+                              "?"}
                           </div>
                           <span>{task.assignedTo.name}</span>
                         </div>
@@ -261,7 +249,7 @@ const Archive = () => {
                         Finalizada:{" "}
                         {new Date(task.completedAt).toLocaleDateString(
                           "es-AR",
-                          {day: "2-digit", month: "short", year: "numeric"}
+                          {day: "2-digit", month: "short", year: "numeric"},
                         )}
                       </span>
                       {task.subtasks && task.subtasks.length > 0 && (
@@ -352,7 +340,7 @@ const Archive = () => {
           <div className='grid grid-cols-1 md:grid-cols-3 mb-4'>
             <div className='text-center p-4 bg-gray-50 rounded-lg'>
               <div className='text-3xl font-bold text-gray-900'>
-                {sortedTasks.length}
+                {statistics.total}
               </div>
               <div className='text-sm text-gray-600 mt-1'>
                 Total de tareas archivadas
@@ -360,12 +348,7 @@ const Archive = () => {
             </div>
             <div className='text-center p-4 bg-amber-50 rounded-lg'>
               <div className='text-3xl font-bold text-amber-700'>
-                {
-                  sortedTasks.filter((t) => {
-                    const days = getDaysUntilDeletion(t.autoDeleteAt);
-                    return days !== null && days <= 3;
-                  }).length
-                }
+                {statistics.urgentDeletion}
               </div>
               <div className='text-sm text-amber-700 mt-1'>
                 Se eliminan en 3 días o menos
@@ -373,7 +356,7 @@ const Archive = () => {
             </div>
             <div className='text-center p-4 bg-red-50 rounded-lg'>
               <div className='text-3xl font-bold text-red-700'>
-                {sortedTasks.filter((t) => t.priority === "alta").length}
+                {statistics.highPriority}
               </div>
               <div className='text-sm text-red-700 mt-1'>
                 Tareas de alta prioridad
