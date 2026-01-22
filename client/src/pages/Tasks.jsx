@@ -61,20 +61,41 @@ const Tasks = () => {
     }
 
     const taskId = active.id;
-    const newStatus = over.id;
+    let newStatus = over.id;
 
-    // Si se soltó sobre la misma columna, no hacer nada
-    const task = tasks.find((t) => t._id === taskId);
-    if (task.status === newStatus) {
+    // --- ARREGLO AQUÍ ---
+    // Si over.id NO es uno de los IDs de columnas definidos en COLUMNS,
+    // significa que soltamos la tarea sobre OTRA tarea.
+    const isColumn = COLUMNS.some((col) => col.id === newStatus);
+
+    if (!isColumn) {
+      // Buscamos la tarea sobre la cual soltamos para robarle su status
+      const overTask = tasks.find((t) => t._id === over.id);
+      if (overTask) {
+        newStatus = overTask.status;
+      } else {
+        setActiveTask(null);
+        return;
+      }
+    }
+    // ----------------------
+
+    // Si se soltó sobre la misma columna o el mismo status, no hacer nada
+    const currentTask = tasks.find((t) => t._id === taskId);
+    if (currentTask.status === newStatus) {
       setActiveTask(null);
       return;
     }
 
-    // Actualizar el estado de la tarea
-    await updateTask(taskId, {status: newStatus});
-    setActiveTask(null);
+    try {
+      // Actualizar el estado de la tarea en el servidor
+      await updateTask(taskId, {status: newStatus});
+    } catch (error) {
+      console.error("Error al actualizar la tarea:", error);
+    } finally {
+      setActiveTask(null);
+    }
   };
-
   const handleTaskClick = (task) => {
     setSelectedTaskId(task._id);
     setIsDetailModalOpen(true);
