@@ -161,7 +161,7 @@ Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) par
 
 ## 👥 Autores
 
-- **Tu Nombre** - _Desarrollo inicial_ - [Tu GitHub](https://github.com/tu-usuario)
+- **Álvaro Condorí** - _Desarrollo inicial_ - [Tu GitHub](https://github.com/ACondori95)
 
 ## 🙏 Agradecimientos
 
